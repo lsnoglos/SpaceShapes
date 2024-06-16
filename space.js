@@ -116,11 +116,16 @@ function drawSpaceship() {
 }
 
 function updateSpaceship() {
-    if (spaceship.isMovingUp && spaceship.y > 0) {
+    if (spaceship.isMovingUp && spaceship.y - spaceship.speed > 20) {
         spaceship.y -= spaceship.speed;
+    } else if (spaceship.isMovingUp) {
+        spaceship.y = 20;
     }
-    if (spaceship.isMovingDown && spaceship.y + spaceship.height < canvas.height) {
+
+    if (spaceship.isMovingDown && spaceship.y + spaceship.speed < canvas.height - 15) { 
         spaceship.y += spaceship.speed;
+    } else if (spaceship.isMovingDown) {
+        spaceship.y = canvas.height - 15;
     }
 }
 
@@ -147,7 +152,7 @@ function updateBullets() {
                 if (enemy.hits === 0) {
                     enemies.splice(enemyIndex, 1);
                     score += enemyTypes.find(type => type.type === enemy.color).hits;
-                    updateScore();
+                    updateScoreUI();
                 }
             }
         });
@@ -462,6 +467,21 @@ document.getElementById('restart-button').addEventListener('click', () => {
     update();
 });
 
+document.getElementById('start-button').addEventListener('click', () => {
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('info-container').classList.remove('hidden');
+    update();
+});
+
 createStars(100);
 createPlanets(5);
-update();
+
+function animateStartScreen() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    drawStars();
+    drawPlanets();
+    drawSpaceship();
+    requestAnimationFrame(animateStartScreen);
+}
+
+animateStartScreen();
