@@ -1,7 +1,7 @@
 const canvas = document.getElementById('game');
 const context = canvas.getContext('2d');
 canvas.width = 400;
-canvas.height = 800;
+canvas.height = 750;
 
 let stars = [];
 let planets = [];
@@ -404,6 +404,7 @@ function update() {
         animationFrameId = requestAnimationFrame(update);
     } else {
         document.getElementById('game-over').classList.remove('hidden');
+        document.getElementById('pause-button').classList.add('hidden');
         cancelAnimationFrame(animationFrameId);
     }
 }
@@ -465,6 +466,7 @@ document.getElementById('restart-button').addEventListener('click', () => {
     enemies = [];
     spaceship.bullets = [];
     document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('pause-button').classList.remove('hidden');
     update();
 });
 
@@ -475,6 +477,7 @@ document.getElementById('start-button').addEventListener('click', () => {
 
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('info-container').classList.remove('hidden');
+    document.getElementById('pause-button').classList.remove('hidden');
     update();
 });
 
@@ -485,6 +488,7 @@ document.getElementById('start-button').addEventListener('touchstart', () => {
 
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('info-container').classList.remove('hidden');
+    document.getElementById('pause-button').classList.remove('hidden');
     update();
 });
 
