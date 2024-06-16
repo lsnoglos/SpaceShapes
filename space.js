@@ -6,11 +6,18 @@ canvas.height = 800;
 let stars = [];
 let planets = [];
 
+const enemySpawnRates = [2, 2.3, 2.6, 2.9, 3.2, 3.5, 3.8, 4.1, 4.4, 4.7, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12];
+const enemySpeeds = [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 7, 7, 8];
+const spaceshipSpeeds = [5, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.4, 7.7, 8, 8.4, 8.8, 9.1, 9.4, 9.7, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12, 12.3];
+
 let enemies = [];
-let enemySpeed = 1;
-let enemySpawnInterval = 1;
+let enemySpeed = enemySpeeds[0];
+let enemySpawnInterval = enemySpawnRates[0];
 
 let isGameOver = false;
+let score = 0;
+let level = 1;
+const pointsPerLevel = 30;
 
 const spaceship = {
     x: 50,
@@ -18,7 +25,7 @@ const spaceship = {
     width: 40,
     height: 20,
     color: 'white',
-    speed: 5,
+    speed: spaceshipSpeeds[0],
     bullets: [],
     shoot() {
         this.bullets.push({ x: this.x + this.width, y: this.y, width: 5, height: 2, speed: 5 });
@@ -37,6 +44,10 @@ function draw() {
     drawSpaceship();
     drawBullets();
     drawEnemies();
+
+    context.fillStyle = 'white'
+    context.fillText(`Score: ${score}`, 10, 20);
+    context.fillText(`Level: ${level}`, 10, 40);
 }
 
 function drawSpaceship() {
@@ -130,6 +141,7 @@ function drawEnemies() {
 
         if (enemy.x + enemy.width < 0) {
             enemies.splice(index, 1);
+            score += 1;
         }
     });
 }
@@ -207,12 +219,27 @@ function checkCollisions() {
     });
 }
 
+function updateLevel() {
+    level = Math.floor(score / pointsPerLevel) + 1;
+
+    if (level <= enemySpawnRates.length) {
+        enemySpawnInterval = enemySpawnRates[level - 1];
+        enemySpeed = enemySpeeds[level - 1];
+        spaceship.speed = spaceshipSpeeds[level - 1];
+    } else {
+        enemySpawnInterval = enemySpawnRates[enemySpawnRates.length - 1];
+        enemySpeed = enemySpeeds[enemySpeeds.length - 1];
+        spaceship.speed = spaceshipSpeeds[spaceshipSpeeds.length - 1];
+    }
+}
+
 function update() {
     if (!isGameOver) {
         updateSpaceship();
         updateBullets();
         generateObstacles();
         checkCollisions();
+        updateLevel();
     }
     draw();
 
