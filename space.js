@@ -3,6 +3,9 @@ const context = canvas.getContext('2d');
 canvas.width = 400;
 canvas.height = 800;
 
+let stars = [];
+let planets = [];
+
 const spaceship = {
     x: 50,
     y: canvas.height / 2,
@@ -19,6 +22,8 @@ const spaceship = {
 
 function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
+    drawStars();
+    drawPlanets();
     drawSpaceship();
     drawBullets();
 }
@@ -92,6 +97,51 @@ function drawBullets() {
 
 function updateBullets(){}
 
+function createStars(count) {
+    for (let i = 0; i < count; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 2,
+            speed: Math.random() * 0.5 + 0.2
+        });
+    }
+}
+
+function drawStars() {
+    context.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    stars.forEach(star => {
+        context.beginPath();
+        context.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        context.fill();
+        star.x -= star.speed;
+        if (star.x < 0) star.x = canvas.width;
+    });
+}
+
+function createPlanets(count) {
+    for (let i = 0; i < count; i++) {
+        planets.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 20 + 10,
+            speed: Math.random() * 0.2 + 0.1,
+            color: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.1)`
+        });
+    }
+}
+
+function drawPlanets() {
+    planets.forEach(planet => {
+        context.fillStyle = planet.color;
+        context.beginPath();
+        context.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
+        context.fill();
+        planet.x -= planet.speed;
+        if (planet.x < 0) planet.x = canvas.width;
+    });
+}
+
 function update() {
         updateSpaceship();
         updateBullets();
@@ -120,4 +170,6 @@ document.addEventListener('keyup', event => {
     }
 });
 
+createStars(100);
+createPlanets(5);
 update();
