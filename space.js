@@ -6,8 +6,8 @@ canvas.height = 800;
 let stars = [];
 let planets = [];
 
-const enemySpawnRates = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]; //max 12
-const enemySpeeds = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4]; // max 8
+const enemySpawnRates = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]; //max 12
+const enemySpeeds = [0.5, 0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5, 1.5, 2, 2, 2, 2, 2, 2.5, 2.5, 2.5, 2.5, 2.5, 3, 3, 3, 3, 3]; // max 8
 const spaceshipSpeeds = [5, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.4, 7.7, 8, 8.4, 8.8, 9.1, 9.4, 9.7, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12, 12.3]; //max 12
 
 let enemies = [];
@@ -42,11 +42,11 @@ const spaceship = {
 };
 
 const enemyTypes = [
-    { type: 'darkRed', hits: 2, draw: drawMissile },
-    { type: 'blue', hits: 2, draw: drawMissile },
-    { type: 'white', hits: 1, draw: drawMissile },
-    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true },
-    { type: 'blue', hits: 3, draw: drawRotatingEnemy }
+    { type: 'darkRed', hits: 2, draw: drawMissile, minLevel: 1},
+    { type: 'blue', hits: 2, draw: drawMissile, minLevel: 2},
+    { type: 'white', hits: 1, draw: drawMissile, minLevel: 3},
+    { type: 'blue', hits: 3, draw: drawRotatingEnemy, minLevel: 4},
+    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true, minLevel: 5}
 ];
 
 function draw() {
@@ -160,7 +160,8 @@ function updateBullets() {
 }
 
 function createEnemy() {
-    const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    const availableTypes = enemyTypes.filter(type => type.minLevel <= level);
+    const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
     const size = 20 + Math.random() * 30;
     return {
         x: canvas.width,
