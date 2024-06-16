@@ -97,3 +97,28 @@ canvas {
     width: 100%;
     height: calc(100% - 40px);
 }
+
+#controls {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+#controls button {
+    background-color: #444;
+    border: none;
+    color: white;
+    padding: 15px;
+    font-size: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 60px;
+}
+
+#controls button:active {
+    background-color: #666;
+}

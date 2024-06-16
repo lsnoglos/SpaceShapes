@@ -468,13 +468,42 @@ document.getElementById('restart-button').addEventListener('click', () => {
 });
 
 document.getElementById('start-button').addEventListener('click', () => {
+    document.getElementById('up-button').classList.add('hidden');
+    document.getElementById('down-button').classList.add('hidden');
+    document.getElementById('shoot-button').classList.add('hidden');
+
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('info-container').classList.remove('hidden');
     update();
 });
 
-createStars(100);
-createPlanets(5);
+document.getElementById('start-button').addEventListener('touchstart', () => {
+    document.getElementById('up-button').classList.remove('hidden');
+    document.getElementById('down-button').classList.remove('hidden');
+    document.getElementById('shoot-button').classList.remove('hidden');
+
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('info-container').classList.remove('hidden');
+    update();
+});
+
+document.getElementById('up-button').addEventListener('touchstart', () => {
+    spaceship.isMovingUp = true;
+});
+document.getElementById('up-button').addEventListener('touchend', () => {
+    spaceship.isMovingUp = false;
+});
+
+document.getElementById('down-button').addEventListener('touchstart', () => {
+    spaceship.isMovingDown = true;
+});
+document.getElementById('down-button').addEventListener('touchend', () => {
+    spaceship.isMovingDown = false;
+});
+
+document.getElementById('shoot-button').addEventListener('touchstart', () => {
+    spaceship.shoot();
+});
 
 function animateStartScreen() {
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -484,4 +513,6 @@ function animateStartScreen() {
     requestAnimationFrame(animateStartScreen);
 }
 
+createStars(100);
+createPlanets(5);
 animateStartScreen();
