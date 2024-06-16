@@ -6,9 +6,9 @@ canvas.height = 800;
 let stars = [];
 let planets = [];
 
-const enemySpawnRates = [2, 2.3, 2.6, 2.9, 3.2, 3.5, 3.8, 4.1, 4.4, 4.7, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12];
-const enemySpeeds = [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 7, 7, 8];
-const spaceshipSpeeds = [5, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.4, 7.7, 8, 8.4, 8.8, 9.1, 9.4, 9.7, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12, 12.3];
+const enemySpawnRates = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]; //max 12
+const enemySpeeds = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4]; // max 8
+const spaceshipSpeeds = [5, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.4, 7.7, 8, 8.4, 8.8, 9.1, 9.4, 9.7, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12, 12.3]; //max 12
 
 let enemies = [];
 let enemySpeed = enemySpeeds[0];
@@ -24,6 +24,8 @@ let isGameOver = false;
 let score = 0;
 let level = 1;
 const pointsPerLevel = 30;
+
+let isPaused = false;
 
 const spaceship = {
     x: 50,
@@ -41,6 +43,8 @@ const spaceship = {
 
 const enemyTypes = [
     { type: 'darkRed', hits: 2, draw: drawMissile },
+    { type: 'blue', hits: 2, draw: drawMissile },
+    { type: 'white', hits: 1, draw: drawMissile },
     { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true },
     { type: 'blue', hits: 3, draw: drawRotatingEnemy }
 ];
@@ -62,8 +66,6 @@ function draw() {
     updateObstacles();
 
     context.fillStyle = 'white'
-    context.fillText(`Score: ${score}`, 10, 20);
-    context.fillText(`Level: ${level}`, 10, 40);
 }
 
 function drawSpaceship() {
@@ -145,6 +147,7 @@ function updateBullets() {
                 if (enemy.hits === 0) {
                     enemies.splice(enemyIndex, 1);
                     score += enemyTypes.find(type => type.type === enemy.color).hits;
+                    updateScore();
                 }
             }
         });
@@ -184,7 +187,7 @@ function drawEnemies() {
             context.fill();
             context.globalAlpha = 1;
             context.shadowBlur = 0;
-            enemy.shrinkStep += 0.05; 
+            enemy.shrinkStep += 0.05;
             if (enemy.shrinkStep >= 1) {
                 enemies.splice(index, 1);
             }
@@ -200,6 +203,7 @@ function drawEnemies() {
             if (enemy.x + enemy.width < 0) {
                 enemies.splice(index, 1);
                 score += 1;
+                updateScoreUI();
             }
         }
     });
@@ -325,9 +329,9 @@ function drawSpecialStar() {
         context.beginPath();
         for (let i = 0; i < 5; i++) {
             context.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.x,
-                           -Math.sin((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.y);
+                -Math.sin((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.y);
             context.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.x,
-                           -Math.sin((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.y);
+                -Math.sin((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.y);
         }
         context.closePath();
         context.fill();
@@ -349,12 +353,13 @@ function checkCollisions() {
         }
     });
 
-    if (specialStar && 
+    if (specialStar &&
         spaceship.x < specialStar.x + specialStar.radius &&
         spaceship.x + spaceship.width > specialStar.x &&
         spaceship.y < specialStar.y + specialStar.radius &&
         spaceship.y + spaceship.height > specialStar.y) {
         score += BonusPointsByStar; // Bonus points
+        updateScoreUI();
         specialStar = null;
         enemies.forEach(enemy => {
             enemy.shrink = true;
@@ -375,10 +380,12 @@ function updateLevel() {
         enemySpeed = enemySpeeds[enemySpeeds.length - 1];
         spaceship.speed = spaceshipSpeeds[spaceshipSpeeds.length - 1];
     }
+
+    updateLevelUI();
 }
 
 function update() {
-    if (!isGameOver) {
+    if (!isGameOver && !isPaused) {
         updateSpaceship();
         updateBullets();
         generateObstacles();
@@ -388,10 +395,10 @@ function update() {
     draw();
 
     if (!isGameOver) {
-        setTimeout(update, 1000 / 60);
+        animationFrameId = requestAnimationFrame(update);
     } else {
-        context.fillStyle = 'white';
-        context.fillText('GAME OVER', canvas.width / 2 - 50, canvas.height / 2);
+        document.getElementById('game-over').classList.remove('hidden');
+        cancelAnimationFrame(animationFrameId);
     }
 }
 
@@ -414,6 +421,45 @@ document.addEventListener('keyup', event => {
     if (event.code === 'ArrowDown') {
         spaceship.isMovingDown = false;
     }
+});
+
+function updateLevelUI() {
+    document.getElementById('level').innerText = `Level: ${level}`;
+}
+
+function updateScoreUI() {
+    document.getElementById('score').innerText = `Score: ${score}`;
+}
+
+document.getElementById('pause-button').addEventListener('click', () => {
+    isPaused = !isPaused;
+    document.getElementById('pause-message').classList.toggle('hidden', !isPaused);
+    document.getElementById('pause-button').classList.toggle('hidden', isPaused); // Hide pause button when paused
+    if (isPaused) {
+        cancelAnimationFrame(animationFrameId);
+    } else {
+        update();
+    }
+});
+
+document.getElementById('resume-button').addEventListener('click', () => {
+    isPaused = false;
+    document.getElementById('pause-message').classList.add('hidden');
+    document.getElementById('pause-button').classList.remove('hidden'); // Show pause button when resumed
+    update();
+});
+
+document.getElementById('restart-button').addEventListener('click', () => {
+    isGameOver = false;
+    score = 0;
+    level = 1;
+    enemySpeed = enemySpeeds[0];
+    enemySpawnInterval = enemySpawnRates[0];
+    spaceship.speed = spaceshipSpeeds[0];
+    enemies = [];
+    spaceship.bullets = [];
+    document.getElementById('game-over').classList.add('hidden');
+    update();
 });
 
 createStars(100);

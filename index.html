@@ -8,7 +8,22 @@
 </head>
 <body>
     <div class="container">
+        <div id="info-container">
+            <div id="info">
+                <div id="score">Score: 0</div>
+                <div id="level">Level: 1</div>
+            </div>
+            <button id="pause-button" class="control-button">װ</button>
+        </div>
         <canvas id="game"></canvas>
+        <div id="pause-message" class="hidden">
+            <p>Game Paused</p>
+            <button id="resume-button">➤</button>
+        </div>
+        <div id="game-over" class="hidden">
+            <p>GAME OVER</p>
+            <button id="restart-button">↺</button>
+        </div>
     </div>
     <script src="space.js"></script>
 </body>
