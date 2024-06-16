@@ -350,20 +350,28 @@ function drawSpecialStar() {
 }
 
 function checkCollisions() {
+
+    const collisionBox = {
+        x: spaceship.x,
+        y: spaceship.y - 10,
+        width: 40,
+        height: 20
+    };
+
     enemies.forEach((enemy, index) => {
-        if (spaceship.x < enemy.x + enemy.width &&
-            spaceship.x + spaceship.width > enemy.x &&
-            spaceship.y < enemy.y + enemy.height &&
-            spaceship.y + spaceship.height > enemy.y) {
+        if (collisionBox.x < enemy.x + enemy.width &&
+            collisionBox.x + collisionBox.width > enemy.x &&
+            collisionBox.y < enemy.y + enemy.height &&
+            collisionBox.y + collisionBox.height > enemy.y) {
             isGameOver = true;
         }
     });
 
     if (specialStar &&
-        spaceship.x < specialStar.x + specialStar.radius &&
-        spaceship.x + spaceship.width > specialStar.x &&
-        spaceship.y < specialStar.y + specialStar.radius &&
-        spaceship.y + spaceship.height > specialStar.y) {
+        collisionBox.x < specialStar.x + specialStar.radius &&
+        collisionBox.x + collisionBox.width > specialStar.x &&
+        collisionBox.y < specialStar.y + specialStar.radius &&
+        collisionBox.y + collisionBox.height > specialStar.y) {
         score += BonusPointsByStar; // Bonus points
         updateScoreUI();
         specialStar = null;
