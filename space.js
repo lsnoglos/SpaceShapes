@@ -14,6 +14,12 @@ let enemies = [];
 let enemySpeed = enemySpeeds[0];
 let enemySpawnInterval = enemySpawnRates[0];
 
+let specialStar = null;
+const specialStarInterval = 5 * 1000;
+let lastSpecialStarSpawnTime = 0;
+let BonusPointsByStar = 10;
+let flashTime = 0;
+
 let isGameOver = false;
 let score = 0;
 let level = 1;
@@ -39,11 +45,19 @@ const enemyTypes = [
 
 function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (flashTime > 0) {
+        context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        flashTime--;
+    }
+
     drawStars();
     drawPlanets();
     drawSpaceship();
     drawBullets();
     drawEnemies();
+    updateObstacles();
 
     context.fillStyle = 'white'
     context.fillText(`Score: ${score}`, 10, 20);
@@ -147,18 +161,37 @@ function createEnemy() {
         color: type.type,
         hits: type.hits,
         draw: type.draw,
-        directionY: Math.random() > 0.5 ? 1 : -1
+        directionY: Math.random() > 0.5 ? 1 : -1,
+        shrink: false,
+        shrinkStep: 0
     };
 }
 
 function drawEnemies() {
     enemies.forEach((enemy, index) => {
-        enemy.draw(enemy);
-        enemy.x -= enemy.speed;
-
-        if (enemy.x + enemy.width < 0) {
-            enemies.splice(index, 1);
-            score += 1;
+        if (enemy.shrink) {
+            enemy.width *= 0.9;
+            enemy.height *= 0.9;
+            context.globalAlpha = Math.max(0, 1 - enemy.shrinkStep);
+            context.fillStyle = enemy.color;
+            context.shadowColor = 'rgba(255, 255, 255, 1)';
+            context.shadowBlur = Math.min(40, enemy.shrinkStep * 80); // ligth effect
+            context.beginPath();
+            context.arc(enemy.x, enemy.y, Math.max(0, enemy.width / 2), 0, Math.PI * 2);
+            context.fill();
+            context.globalAlpha = 1;
+            context.shadowBlur = 0;
+            enemy.shrinkStep += 0.05; 
+            if (enemy.shrinkStep >= 1) {
+                enemies.splice(index, 1);
+            }
+        } else {
+            enemy.draw(enemy);
+            enemy.x -= enemy.speed;
+            if (enemy.x + enemy.width < 0) {
+                enemies.splice(index, 1);
+                score += 1;
+            }
         }
     });
 }
@@ -167,6 +200,16 @@ function generateObstacles() {
     if (Math.random() < enemySpawnInterval / 60) {
         enemies.push(createEnemy());
     }
+    if (!specialStar && (Date.now() - lastSpecialStarSpawnTime) > specialStarInterval) {
+        createSpecialStar();
+        lastSpecialStarSpawnTime = Date.now();
+    }
+}
+
+function updateObstacles() {
+    generateObstacles();
+    drawEnemies();
+    drawSpecialStar();
 }
 
 function drawMissile(enemy) {
@@ -225,6 +268,48 @@ function drawPlanets() {
     });
 }
 
+function createSpecialStar() {
+    specialStar = {
+        x: canvas.width,
+        y: Math.random() * canvas.height,
+        radius: 10,
+        speed: 2,
+        colors: ['rgba(255, 0, 0, 1)', 'rgba(0, 255, 0, 1)', 'rgba(0, 0, 255, 1)', 'rgba(255, 255, 0, 1)', 'rgba(0, 255, 255, 1)', 'rgba(255, 0, 255, 1)'],
+        colorIndex: 0,
+        originalRadius: 10,
+        shrink: false
+    };
+    setInterval(() => {
+        if (specialStar) {
+            specialStar.radius = specialStar.originalRadius + Math.sin(performance.now() / 200) * 2;
+            specialStar.colorIndex = (specialStar.colorIndex + 1) % specialStar.colors.length;
+        }
+    }, 100);
+}
+
+function drawSpecialStar() {
+    if (specialStar) {
+        context.save();
+        context.fillStyle = specialStar.colors[specialStar.colorIndex];
+        context.shadowColor = specialStar.colors[specialStar.colorIndex];
+        context.shadowBlur = 20;
+        context.beginPath();
+        for (let i = 0; i < 5; i++) {
+            context.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.x,
+                           -Math.sin((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.y);
+            context.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.x,
+                           -Math.sin((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.y);
+        }
+        context.closePath();
+        context.fill();
+        context.restore();
+        specialStar.x -= specialStar.speed;
+        if (specialStar.x + specialStar.radius < 0) {
+            specialStar = null;
+        }
+    }
+}
+
 function checkCollisions() {
     enemies.forEach((enemy, index) => {
         if (spaceship.x < enemy.x + enemy.width &&
@@ -234,6 +319,19 @@ function checkCollisions() {
             isGameOver = true;
         }
     });
+
+    if (specialStar && 
+        spaceship.x < specialStar.x + specialStar.radius &&
+        spaceship.x + spaceship.width > specialStar.x &&
+        spaceship.y < specialStar.y + specialStar.radius &&
+        spaceship.y + spaceship.height > specialStar.y) {
+        score += BonusPointsByStar; // Bonus points
+        specialStar = null;
+        enemies.forEach(enemy => {
+            enemy.shrink = true;
+        });
+        flashTime = 30;
+    }
 }
 
 function updateLevel() {
