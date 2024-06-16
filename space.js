@@ -40,7 +40,8 @@ const spaceship = {
 };
 
 const enemyTypes = [
-    { type: 'red', hits: 2, draw: drawMissile }
+    { type: 'darkRed', hits: 2, draw: drawMissile },
+    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true }
 ];
 
 function draw() {
@@ -163,7 +164,8 @@ function createEnemy() {
         draw: type.draw,
         directionY: Math.random() > 0.5 ? 1 : -1,
         shrink: false,
-        shrinkStep: 0
+        shrinkStep: 0,
+        diagonal: type.diagonal || false
     };
 }
 
@@ -188,6 +190,12 @@ function drawEnemies() {
         } else {
             enemy.draw(enemy);
             enemy.x -= enemy.speed;
+            if (enemy.diagonal) {
+                enemy.y += enemy.speed * enemy.directionY;
+                if (enemy.y <= 0 || enemy.y + enemy.height >= canvas.height) {
+                    enemy.directionY *= -1;
+                }
+            }
             if (enemy.x + enemy.width < 0) {
                 enemies.splice(index, 1);
                 score += 1;
@@ -222,6 +230,12 @@ function drawMissile(enemy) {
     context.fill();
 }
 
+function drawAsteroid(enemy) {
+    context.fillStyle = enemy.color;
+    context.beginPath();
+    context.arc(enemy.x, enemy.y, enemy.width / 2, 0, Math.PI * 2);
+    context.fill();
+}
 
 function createStars(count) {
     for (let i = 0; i < count; i++) {
