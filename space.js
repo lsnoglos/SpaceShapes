@@ -10,6 +10,8 @@ let enemies = [];
 let enemySpeed = 1;
 let enemySpawnInterval = 1;
 
+let isGameOver = false;
+
 const spaceship = {
     x: 50,
     y: canvas.height / 2,
@@ -19,7 +21,7 @@ const spaceship = {
     speed: 5,
     bullets: [],
     shoot() {
-    this.bullets.push({ x: this.x + this.width, y: this.y, width: 5, height: 2, speed: 5 });
+        this.bullets.push({ x: this.x + this.width, y: this.y, width: 5, height: 2, speed: 5 });
 
     }
 };
@@ -104,7 +106,7 @@ function drawBullets() {
     });
 }
 
-function updateBullets(){}
+function updateBullets() { }
 
 function createEnemy() {
     const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
@@ -194,12 +196,32 @@ function drawPlanets() {
     });
 }
 
+function checkCollisions() {
+    enemies.forEach((enemy, index) => {
+        if (spaceship.x < enemy.x + enemy.width &&
+            spaceship.x + spaceship.width > enemy.x &&
+            spaceship.y < enemy.y + enemy.height &&
+            spaceship.y + spaceship.height > enemy.y) {
+            isGameOver = true;
+        }
+    });
+}
+
 function update() {
+    if (!isGameOver) {
         updateSpaceship();
         updateBullets();
         generateObstacles();
-        draw();
-        requestAnimationFrame(update);
+        checkCollisions();
+    }
+    draw();
+
+    if (!isGameOver) {
+        setTimeout(update, 1000 / 60);
+    } else {
+        context.fillStyle = 'white';
+        context.fillText('GAME OVER', canvas.width / 2 - 50, canvas.height / 2);
+    }
 }
 
 document.addEventListener('keydown', event => {
