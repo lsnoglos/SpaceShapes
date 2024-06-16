@@ -34,7 +34,7 @@ const spaceship = {
 };
 
 const enemyTypes = [
-    { type: 'red', draw: drawMissile }
+    { type: 'red', hits: 2, draw: drawMissile }
 ];
 
 function draw() {
@@ -117,7 +117,23 @@ function drawBullets() {
     });
 }
 
-function updateBullets() { }
+function updateBullets() {
+    spaceship.bullets.forEach((bullet, bulletIndex) => {
+        enemies.forEach((enemy, enemyIndex) => {
+            if (bullet.x < enemy.x + enemy.width &&
+                bullet.x + bullet.width > enemy.x &&
+                bullet.y < enemy.y + enemy.height &&
+                bullet.y + bullet.height > enemy.y) {
+                enemy.hits--;
+                spaceship.bullets.splice(bulletIndex, 1);
+                if (enemy.hits === 0) {
+                    enemies.splice(enemyIndex, 1);
+                    score += enemyTypes.find(type => type.type === enemy.color).hits;
+                }
+            }
+        });
+    });
+}
 
 function createEnemy() {
     const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
@@ -129,6 +145,7 @@ function createEnemy() {
         height: size,
         speed: enemySpeed + Math.random() * 3,
         color: type.type,
+        hits: type.hits,
         draw: type.draw,
         directionY: Math.random() > 0.5 ? 1 : -1
     };
