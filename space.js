@@ -6,6 +6,10 @@ canvas.height = 800;
 let stars = [];
 let planets = [];
 
+let enemies = [];
+let enemySpeed = 1;
+let enemySpawnInterval = 1;
+
 const spaceship = {
     x: 50,
     y: canvas.height / 2,
@@ -20,12 +24,17 @@ const spaceship = {
     }
 };
 
+const enemyTypes = [
+    { type: 'red', draw: drawMissile }
+];
+
 function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawStars();
     drawPlanets();
     drawSpaceship();
     drawBullets();
+    drawEnemies();
 }
 
 function drawSpaceship() {
@@ -97,6 +106,49 @@ function drawBullets() {
 
 function updateBullets(){}
 
+function createEnemy() {
+    const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    const size = 20 + Math.random() * 30;
+    return {
+        x: canvas.width,
+        y: Math.random() * canvas.height,
+        width: size,
+        height: size,
+        speed: enemySpeed + Math.random() * 3,
+        color: type.type,
+        draw: type.draw,
+        directionY: Math.random() > 0.5 ? 1 : -1
+    };
+}
+
+function drawEnemies() {
+    enemies.forEach((enemy, index) => {
+        enemy.draw(enemy);
+        enemy.x -= enemy.speed;
+
+        if (enemy.x + enemy.width < 0) {
+            enemies.splice(index, 1);
+        }
+    });
+}
+
+function generateObstacles() {
+    if (Math.random() < enemySpawnInterval / 60) {
+        enemies.push(createEnemy());
+    }
+}
+
+function drawMissile(enemy) {
+    context.fillStyle = enemy.color;
+    context.beginPath();
+    context.moveTo(enemy.x, enemy.y);
+    context.lineTo(enemy.x, enemy.y + enemy.height);
+    context.lineTo(enemy.x + enemy.width, enemy.y + enemy.height / 2);
+    context.closePath();
+    context.fill();
+}
+
+
 function createStars(count) {
     for (let i = 0; i < count; i++) {
         stars.push({
@@ -145,6 +197,7 @@ function drawPlanets() {
 function update() {
         updateSpaceship();
         updateBullets();
+        generateObstacles();
         draw();
         requestAnimationFrame(update);
 }
