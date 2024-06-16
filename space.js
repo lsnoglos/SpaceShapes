@@ -9,12 +9,18 @@ const spaceship = {
     width: 40,
     height: 20,
     color: 'white',
-    speed: 5
+    speed: 5,
+    bullets: [],
+    shoot() {
+    this.bullets.push({ x: this.x + this.width, y: this.y, width: 5, height: 2, speed: 5 });
+
+    }
 };
 
 function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawSpaceship();
+    drawBullets();
 }
 
 function drawSpaceship() {
@@ -73,8 +79,22 @@ function updateSpaceship() {
     }
 }
 
+function drawBullets() {
+    spaceship.bullets.forEach((bullet, index) => {
+        context.fillStyle = 'yellow';
+        context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        bullet.x += bullet.speed;
+        if (bullet.x > canvas.width) {
+            spaceship.bullets.splice(index, 1);
+        }
+    });
+}
+
+function updateBullets(){}
+
 function update() {
         updateSpaceship();
+        updateBullets();
         draw();
         requestAnimationFrame(update);
 }
@@ -85,6 +105,9 @@ document.addEventListener('keydown', event => {
     }
     if (event.code === 'ArrowDown') {
         spaceship.isMovingDown = true;
+    }
+    if (event.code === 'Space') {
+        spaceship.shoot();
     }
 });
 
