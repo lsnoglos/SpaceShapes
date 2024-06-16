@@ -41,7 +41,8 @@ const spaceship = {
 
 const enemyTypes = [
     { type: 'darkRed', hits: 2, draw: drawMissile },
-    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true }
+    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true },
+    { type: 'blue', hits: 3, draw: drawRotatingEnemy }
 ];
 
 function draw() {
@@ -235,6 +236,20 @@ function drawAsteroid(enemy) {
     context.beginPath();
     context.arc(enemy.x, enemy.y, enemy.width / 2, 0, Math.PI * 2);
     context.fill();
+}
+
+function drawRotatingEnemy(enemy) {
+    context.save();
+    context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+    context.rotate((performance.now() / 1000) * 2 * Math.PI);
+    context.fillStyle = enemy.color;
+    context.beginPath();
+    context.moveTo(-enemy.width / 2, -enemy.height / 2);
+    context.lineTo(enemy.width / 2, -enemy.height / 2);
+    context.lineTo(0, enemy.height / 2);
+    context.closePath();
+    context.fill();
+    context.restore();
 }
 
 function createStars(count) {
