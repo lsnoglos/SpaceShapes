@@ -42,7 +42,7 @@ const spaceship = {
 };
 
 const enemyTypes = [
-    { type: 'red', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
+    { type: 'darkRed', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
     { type: 'blue', hits: 1, draw: drawMissile, minLevel: 2, createCraters: true },
     { type: 'white', hits: 1, draw: drawMissile, minLevel: 3, createCraters: true },
     { type: 'orange', hits: 1, draw: drawCometEnemy, minLevel: 4, rotationSpeed: 0.08, createCraters: true },
@@ -73,31 +73,38 @@ function draw() {
 }
 
 function drawSpaceship() {
-    context.fillStyle = 'white';
-
-    context.beginPath(); //main
+    context.fillStyle = 'white'; //main
+    context.beginPath();
     context.moveTo(spaceship.x, spaceship.y);
-    context.lineTo(spaceship.x + 30, spaceship.y + 15);
-    context.lineTo(spaceship.x + 50, spaceship.y);
-    context.lineTo(spaceship.x + 30, spaceship.y - 15);
+    context.lineTo(spaceship.x + 25, spaceship.y + 10); 
+    context.lineTo(spaceship.x + 40, spaceship.y);
+    context.lineTo(spaceship.x + 25, spaceship.y - 10); 
     context.closePath();
     context.fill();
 
-    context.fillStyle = 'lightgray'; //cabin
+    context.fillStyle = 'lightgray';
     context.beginPath();
-    context.moveTo(spaceship.x + 10, spaceship.y - 5);
-    context.lineTo(spaceship.x + 25, spaceship.y - 5);
-    context.lineTo(spaceship.x + 25, spaceship.y + 5);
-    context.lineTo(spaceship.x + 10, spaceship.y + 5);
+    context.moveTo(spaceship.x + 8, spaceship.y - 4);
+    context.lineTo(spaceship.x + 20, spaceship.y - 4);
+    context.lineTo(spaceship.x + 20, spaceship.y + 4);
+    context.lineTo(spaceship.x + 8, spaceship.y + 4);
     context.closePath();
     context.fill();
 
-    context.fillStyle = 'white'; //wing
+    context.fillStyle = 'rgba(0, 200, 255, 0.5)';
     context.beginPath();
-    context.moveTo(spaceship.x + 10, spaceship.y - 10);
-    context.lineTo(spaceship.x, spaceship.y - 20);
-    context.lineTo(spaceship.x, spaceship.y + 20);
-    context.lineTo(spaceship.x + 10, spaceship.y + 10);
+    context.moveTo(spaceship.x + 15, spaceship.y - 5);
+    context.lineTo(spaceship.x + 30, spaceship.y);
+    context.lineTo(spaceship.x + 15, spaceship.y + 5);
+    context.closePath();
+    context.fill();
+
+    context.fillStyle = 'darkgray';
+    context.beginPath();
+    context.moveTo(spaceship.x + 8, spaceship.y - 8);
+    context.lineTo(spaceship.x, spaceship.y - 16);
+    context.lineTo(spaceship.x, spaceship.y + 16);
+    context.lineTo(spaceship.x + 8, spaceship.y + 8);
     context.closePath();
     context.fill();
 
@@ -111,12 +118,24 @@ function drawSpaceship() {
     context.fill();
 
     context.fillStyle = 'orange'; //fire
+    context.shadowColor = 'orange';
     context.beginPath();
     context.moveTo(spaceship.x - 5, spaceship.y - 3);
     context.lineTo(spaceship.x - 10, spaceship.y);
     context.lineTo(spaceship.x - 5, spaceship.y + 3);
     context.closePath();
     context.fill();
+
+    context.strokeStyle = 'gray'; //lines
+    context.lineWidth = 0.1;
+    context.beginPath();
+    context.moveTo(spaceship.x + 10, spaceship.y - 2);
+    context.lineTo(spaceship.x + 30, spaceship.y - 2);
+    context.moveTo(spaceship.x + 10, spaceship.y + 2);
+    context.lineTo(spaceship.x + 30, spaceship.y + 2);
+    context.stroke();
+
+    context.shadowBlur = 11;
 }
 
 function updateSpaceship() {
@@ -126,7 +145,7 @@ function updateSpaceship() {
         spaceship.y = 20;
     }
 
-    if (spaceship.isMovingDown && spaceship.y + spaceship.speed < canvas.height - 15) { 
+    if (spaceship.isMovingDown && spaceship.y + spaceship.speed < canvas.height - 15) {
         spaceship.y += spaceship.speed;
     } else if (spaceship.isMovingDown) {
         spaceship.y = canvas.height - 15;
@@ -148,13 +167,17 @@ function updateSpaceship() {
 function drawBullets() {
     spaceship.bullets.forEach((bullet, index) => {
         context.fillStyle = 'yellow';
+        context.shadowColor = 'yellow';
+        context.shadowBlur = 10;
         context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+
         bullet.x += bullet.speed;
         if (bullet.x > canvas.width) {
             spaceship.bullets.splice(index, 1);
         }
     });
 }
+
 
 function updateBullets() {
     spaceship.bullets.forEach((bullet, bulletIndex) => {
@@ -299,7 +322,7 @@ function drawEnemyShape(enemy, points) {
     }
     context.closePath();
     context.fill();
-    
+
 }
 
 function addCraters(enemy, craterCount = 5) {
@@ -332,7 +355,7 @@ function drawRotatingShape(enemy, drawShape) {
     context.fillStyle = enemy.color;
     drawShape(enemy);
 
-    if(enemy.createCraters){
+    if (enemy.createCraters) {
         addCraters(enemy, 10);
         drawCraters(enemy);
     }
@@ -359,7 +382,7 @@ function drawMissile(enemy) {
     context.closePath();
     context.fill();
 
-    if(enemy.createCraters){
+    if (enemy.createCraters) {
         addCraters(enemy, 12);
         drawCraters(enemy);
     }
@@ -396,7 +419,7 @@ function drawAsteroid(enemy) {
     context.arc(0, 0, enemy.width / 2, 0, Math.PI * 2);
     context.fill();
 
-    if(enemy.createCraters){
+    if (enemy.createCraters) {
         addCraters(enemy, 10);
         drawCraters(enemy);
     }
@@ -414,7 +437,7 @@ function drawZigzagEnemyShape(enemy) {
     context.closePath();
     context.fill();
 
-    if(enemy.createCraters){
+    if (enemy.createCraters) {
         addCraters(enemy, 5);
         drawCraters(enemy);
     }

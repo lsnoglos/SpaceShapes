@@ -58,9 +58,8 @@ body {
     font-weight: bold;
     background-color: rgba(80, 78, 102, 0.7);
     width: 60%;
-    box-shadow: 0px 0px 8px black;
-    text-shadow: 0px 0px 10px rgba(255, 255, 255, 1);
-}
+    box-shadow: 0px 0px 60px rgba(252, 252, 252, 0.8);
+    text-shadow: 0px 0px 50px rgba(255, 255, 255, 1);}
 
 #start-screen {
     position: absolute;
@@ -71,9 +70,9 @@ body {
     text-align: center;
     font-weight: bold;
     background-color: rgba(80, 78, 102, 0.7);
-    width: 100%;
-    box-shadow: 0px 0px 8px black;
-    text-shadow: 0px 0px 10px rgba(255, 255, 255, 1);
+    width: 90%;
+    box-shadow: 0px 0px 60px rgba(252, 252, 252, 0.8);
+    text-shadow: 0px 0px 50px rgba(255, 255, 255, 1);
 }
 
 .hidden {
@@ -90,6 +89,11 @@ button {
     font-size: 16px;
     cursor: pointer;
     box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+    background: linear-gradient(to bottom, #333, #555);
+    border: 1px solid #44444434;
+    border-radius: 10px;
+    color: white;
+    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
 }
 
 canvas {
@@ -167,4 +171,12 @@ canvas {
 
 #controls button:active {
     background-color: rgba(102, 102, 102, 0.4);
+}
+
+button:active {
+    background: linear-gradient(to top, #333, #555);
+}
+
+.control-cross button, #shoot-button {
+    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
 }
