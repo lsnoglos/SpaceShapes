@@ -37,18 +37,17 @@ const spaceship = {
     bullets: [],
     shoot() {
         this.bullets.push({ x: this.x + this.width, y: this.y, width: 5, height: 2, speed: 5 });
-
     }
 };
 
 const enemyTypes = [
-    { type: 'red', hits: 2, draw: drawMissile, minLevel: 1 },
-    { type: 'blue', hits: 2, draw: drawMissile, minLevel: 2 },
-    { type: 'white', hits: 1, draw: drawMissile, minLevel: 3 },
-    { type: 'orange', hits: 1, draw: drawCometEnemy, rotationSpeed: 0.1, minLevel: 4 },
-    { type: 'darkGray', hits: 3, draw: drawRotatingEnemy, rotationSpeed: 0.2, minLevel: 5 },
-    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true, minLevel: 6 },
-    { type: 'gray', hits: 3, draw: drawZigzagEnemy, zigzag: true, zigzagSpeed: 0.2, zigzagHeight: 1, minLevel: 7 }
+    { type: 'red', hits: 2, draw: drawMissile, minLevel: 1, createCraters: true },
+    { type: 'blue', hits: 2, draw: drawMissile, minLevel: 1, createCraters: true },
+    { type: 'white', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
+    { type: 'orange', hits: 1, draw: drawCometEnemy, minLevel: 1, rotationSpeed: 0.08, createCraters: true },
+    { type: 'yellow', hits: 3, draw: drawRotatingEnemy, minLevel: 1, rotationSpeed: 0.15, createCraters: true },
+    { type: 'green', hits: 5, draw: drawAsteroid, diagonal: true, minLevel: 1, createCraters: true },
+    { type: 'gray', hits: 3, draw: drawZigzagEnemy, zigzag: true, zigzagSpeed: 0.2, zigzagHeight: 0.8, minLevel: 1, createCraters: true }
 ];
 
 function draw() {
@@ -182,7 +181,8 @@ function createEnemy() {
         zigzagCounter: 0,
         zigzagSpeed: type.zigzagSpeed || 1,
         zigzagHeight: type.zigzagHeight || 1,
-        rotationSpeed: type.rotationSpeed || 0.1
+        rotationSpeed: type.rotationSpeed || 0.1,
+        createCraters: type.createCraters || false
     };
 }
 
@@ -250,7 +250,7 @@ function updateObstacles() {
     drawSpecialStar();
 }
 
-function drawEnemyShape(enemy, points, craters = false) {
+function drawEnemyShape(enemy, points) {
     context.beginPath();
     const radius = enemy.width / 2;
     for (let i = 0; i < points; i++) {
@@ -265,11 +265,7 @@ function drawEnemyShape(enemy, points, craters = false) {
     }
     context.closePath();
     context.fill();
-
-    if (craters) {
-        addCraters(enemy);
-        drawCraters(enemy);
-    }
+    
 }
 
 function addCraters(enemy, craterCount = 5) {
@@ -278,14 +274,14 @@ function addCraters(enemy, craterCount = 5) {
         for (let i = 0; i < craterCount; i++) {
             const craterX = Math.random() * enemy.width - enemy.width / 2;
             const craterY = Math.random() * enemy.height - enemy.height / 2;
-            const craterRadius = Math.random() * 2 + 1;
+            const craterRadius = Math.random() * 5.5;
             enemy.craters.push({ x: craterX, y: craterY, r: craterRadius });
         }
     }
 }
 
 function drawCraters(enemy) {
-    context.fillStyle = 'black';
+    context.fillStyle = 'rgba(0, 0, 0, 0.9)';
     enemy.craters.forEach(crater => {
         context.beginPath();
         context.arc(crater.x, crater.y, crater.r, 0, Math.PI * 2);
@@ -301,6 +297,12 @@ function drawRotatingShape(enemy, drawShape) {
     }
     context.fillStyle = enemy.color;
     drawShape(enemy);
+
+    if(enemy.createCraters){
+        addCraters(enemy, 10);
+        drawCraters(enemy);
+    }
+
     context.restore();
 }
 
@@ -318,14 +320,29 @@ function drawMissile(enemy) {
     context.lineTo(-enemy.width / 2, enemy.height / 2);
     context.closePath();
     context.fill();
+
+    if(enemy.createCraters){
+        addCraters(enemy, 15);
+        drawCraters(enemy);
+    }
+
     context.restore();
 }
 
 function drawAsteroid(enemy) {
+    context.save();
+    context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
     context.fillStyle = enemy.color;
     context.beginPath();
-    context.arc(enemy.x, enemy.y, enemy.width / 2, 0, Math.PI * 2);
+    context.arc(0, 0, enemy.width / 2, 0, Math.PI * 2);
     context.fill();
+
+    if(enemy.createCraters){
+        addCraters(enemy, 10);
+        drawCraters(enemy);
+    }
+
+    context.restore();
 }
 
 function drawZigzagEnemyShape(enemy) {
@@ -337,6 +354,11 @@ function drawZigzagEnemyShape(enemy) {
     }
     context.closePath();
     context.fill();
+
+    if(enemy.createCraters){
+        addCraters(enemy, 5);
+        drawCraters(enemy);
+    }
 }
 
 function drawZigzagEnemy(enemy) {
