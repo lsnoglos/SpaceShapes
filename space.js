@@ -5,9 +5,10 @@ canvas.height = 750;
 
 let stars = [];
 let planets = [];
+let enemyBullets = [];
 
-const enemySpawnRates = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]; //max 12
-const enemySpeeds = [0.5, 0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5, 1.5, 2, 2, 2, 2, 2, 2.5, 2.5, 2.5, 2.5, 2.5, 3, 3, 3, 3, 3]; // max 8
+const enemySpawnRates = [1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2, 2.05, 2.1, 2.15, 2.2]; //max 12
+const enemySpeeds = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.25]; // max 8
 const spaceshipSpeeds = [5, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.4, 7.7, 8, 8.4, 8.8, 9.1, 9.4, 9.7, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12, 12.3]; //max 12
 
 let enemies = [];
@@ -41,13 +42,14 @@ const spaceship = {
 };
 
 const enemyTypes = [
-    { type: 'red', hits: 2, draw: drawMissile, minLevel: 1, createCraters: true },
-    { type: 'blue', hits: 2, draw: drawMissile, minLevel: 1, createCraters: true },
-    { type: 'white', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
-    { type: 'orange', hits: 1, draw: drawCometEnemy, minLevel: 1, rotationSpeed: 0.08, createCraters: true },
-    { type: 'yellow', hits: 3, draw: drawRotatingEnemy, minLevel: 1, rotationSpeed: 0.15, createCraters: true },
-    { type: 'green', hits: 5, draw: drawAsteroid, diagonal: true, minLevel: 1, createCraters: true },
-    { type: 'gray', hits: 3, draw: drawZigzagEnemy, zigzag: true, zigzagSpeed: 0.2, zigzagHeight: 0.8, minLevel: 1, createCraters: true }
+    { type: 'red', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
+    { type: 'blue', hits: 1, draw: drawMissile, minLevel: 2, createCraters: true },
+    { type: 'white', hits: 1, draw: drawMissile, minLevel: 3, createCraters: true },
+    { type: 'orange', hits: 1, draw: drawCometEnemy, minLevel: 4, rotationSpeed: 0.08, createCraters: true },
+    { type: 'yellow', hits: 2, draw: drawRotatingEnemy, minLevel: 5, rotationSpeed: 0.15, createCraters: true },
+    { type: 'green', hits: 2, draw: drawAsteroid, diagonal: true, minLevel: 6, createCraters: true },
+    { type: 'gray', hits: 2, draw: drawZigzagEnemy, zigzag: true, minLevel: 7, zigzagSpeed: 0.2, zigzagHeight: 0.8, createCraters: true },
+    { type: 'red', hits: 3, draw: drawMissile, minLevel: 4, followsSpaceship: true, shootsAtLevel: 8, createCraters: true }
 ];
 
 function draw() {
@@ -64,9 +66,10 @@ function draw() {
     drawSpaceship();
     drawBullets();
     drawEnemies();
+    drawEnemyBullets();
     updateObstacles();
 
-    context.fillStyle = 'white'
+    context.fillStyle = 'white';
 }
 
 function drawSpaceship() {
@@ -123,7 +126,7 @@ function updateSpaceship() {
         spaceship.y = 20;
     }
 
-    if (spaceship.isMovingDown && spaceship.y + spaceship.speed < canvas.height - 15) {
+    if (spaceship.isMovingDown && spaceship.y + spaceship.speed < canvas.height - 15) { 
         spaceship.y += spaceship.speed;
     } else if (spaceship.isMovingDown) {
         spaceship.y = canvas.height - 15;
@@ -160,6 +163,23 @@ function updateBullets() {
     });
 }
 
+function updateEnemyBullets() {
+    enemyBullets.forEach((bullet, index) => {
+        bullet.x += bullet.vx;
+        bullet.y += bullet.vy;
+        if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+            enemyBullets.splice(index, 1);
+        }
+    });
+}
+
+function drawEnemyBullets() {
+    enemyBullets.forEach((bullet, index) => {
+        context.fillStyle = bullet.color;
+        context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+    });
+}
+
 function createEnemy() {
     const availableTypes = enemyTypes.filter(type => type.minLevel <= level);
     const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
@@ -182,7 +202,9 @@ function createEnemy() {
         zigzagSpeed: type.zigzagSpeed || 1,
         zigzagHeight: type.zigzagHeight || 1,
         rotationSpeed: type.rotationSpeed || 0.1,
-        createCraters: type.createCraters || false
+        createCraters: type.createCraters || false,
+        followsSpaceship: type.followsSpaceship || false,
+        shootsAtLevel: type.shootsAtLevel || false
     };
 }
 
@@ -309,10 +331,14 @@ function drawRotatingShape(enemy, drawShape) {
 function drawMissile(enemy) {
     context.save();
     context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-    const dx = spaceship.x - enemy.x;
-    const dy = spaceship.y - enemy.y;
-    const angle = Math.atan2(dy, dx);
-    context.rotate(angle);
+    if (enemy.followsSpaceship) {
+        const dx = spaceship.x - enemy.x;
+        const dy = spaceship.y - enemy.y;
+        const angle = Math.atan2(dy, dx);
+        context.rotate(angle);
+    } else {
+        context.rotate(Math.PI);
+    }
     context.fillStyle = enemy.color;
     context.beginPath();
     context.moveTo(-enemy.width / 2, -enemy.height / 2);
@@ -322,11 +348,32 @@ function drawMissile(enemy) {
     context.fill();
 
     if(enemy.createCraters){
-        addCraters(enemy, 15);
+        addCraters(enemy, 12);
         drawCraters(enemy);
     }
 
     context.restore();
+
+    if (enemy.shootsAtLevel && level >= enemy.shootsAtLevel) {
+        if (!enemy.lastShotTime) {
+            enemy.lastShotTime = Date.now();
+        }
+        if (Date.now() - enemy.lastShotTime > 2000) {
+            enemy.lastShotTime = Date.now();
+            const dx = spaceship.x - enemy.x;
+            const dy = spaceship.y - enemy.y;
+            const angle = Math.atan2(dy, dx);
+            enemyBullets.push({
+                x: enemy.x,
+                y: enemy.y,
+                width: 7,
+                height: 7,
+                vx: Math.cos(angle) * 3,
+                vy: Math.sin(angle) * 3,
+                color: 'red'
+            });
+        }
+    }
 }
 
 function drawAsteroid(enemy) {
@@ -486,6 +533,15 @@ function checkCollisions() {
         }
     });
 
+    enemyBullets.forEach((bullet, index) => {
+        if (collisionBox.x < bullet.x + bullet.width &&
+            collisionBox.x + collisionBox.width > bullet.x &&
+            collisionBox.y < bullet.y + bullet.height &&
+            collisionBox.y + collisionBox.height > bullet.y) {
+            isGameOver = true;
+        }
+    });
+
     if (specialStar &&
         collisionBox.x < specialStar.x + specialStar.radius &&
         collisionBox.x + collisionBox.width > specialStar.x &&
@@ -521,6 +577,7 @@ function update() {
     if (!isGameOver && !isPaused) {
         updateSpaceship();
         updateBullets();
+        updateEnemyBullets();
         generateObstacles();
         checkCollisions();
         updateLevel();
