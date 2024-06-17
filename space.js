@@ -42,11 +42,13 @@ const spaceship = {
 };
 
 const enemyTypes = [
-    { type: 'darkRed', hits: 2, draw: drawMissile, minLevel: 1},
-    { type: 'blue', hits: 2, draw: drawMissile, minLevel: 2},
-    { type: 'white', hits: 1, draw: drawMissile, minLevel: 3},
-    { type: 'blue', hits: 3, draw: drawRotatingEnemy, minLevel: 4},
-    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true, minLevel: 5}
+    { type: 'red', hits: 2, draw: drawMissile, minLevel: 1 },
+    { type: 'blue', hits: 2, draw: drawMissile, minLevel: 2 },
+    { type: 'white', hits: 1, draw: drawMissile, minLevel: 3 },
+    { type: 'orange', hits: 1, draw: drawCometEnemy, rotationSpeed: 0.1, minLevel: 4 },
+    { type: 'darkGray', hits: 3, draw: drawRotatingEnemy, rotationSpeed: 0.2, minLevel: 5 },
+    { type: 'darkGray', hits: 5, draw: drawAsteroid, diagonal: true, minLevel: 6 },
+    { type: 'gray', hits: 3, draw: drawZigzagEnemy, zigzag: true, zigzagSpeed: 0.2, zigzagHeight: 1, minLevel: 7 }
 ];
 
 function draw() {
@@ -122,7 +124,7 @@ function updateSpaceship() {
         spaceship.y = 20;
     }
 
-    if (spaceship.isMovingDown && spaceship.y + spaceship.speed < canvas.height - 15) { 
+    if (spaceship.isMovingDown && spaceship.y + spaceship.speed < canvas.height - 15) {
         spaceship.y += spaceship.speed;
     } else if (spaceship.isMovingDown) {
         spaceship.y = canvas.height - 15;
@@ -168,14 +170,19 @@ function createEnemy() {
         y: Math.random() * canvas.height,
         width: size,
         height: size,
-        speed: enemySpeed + Math.random() * 3,
+        speed: enemySpeed + Math.random() * 2,
         color: type.type,
         hits: type.hits,
         draw: type.draw,
         directionY: Math.random() > 0.5 ? 1 : -1,
         shrink: false,
         shrinkStep: 0,
-        diagonal: type.diagonal || false
+        diagonal: type.diagonal || false,
+        zigzag: type.zigzag || false,
+        zigzagCounter: 0,
+        zigzagSpeed: type.zigzagSpeed || 1,
+        zigzagHeight: type.zigzagHeight || 1,
+        rotationSpeed: type.rotationSpeed || 0.1
     };
 }
 
@@ -206,6 +213,18 @@ function drawEnemies() {
                     enemy.directionY *= -1;
                 }
             }
+            if (enemy.zigzag) {
+                enemy.zigzagCounter = (enemy.zigzagCounter + 1) % (60 / enemy.zigzagSpeed);
+                let zigzagAmplitude = canvas.height / 8 * enemy.zigzagHeight;
+                if (enemy.zigzagCounter < (30 / enemy.zigzagSpeed)) {
+                    enemy.y += enemy.zigzagSpeed * zigzagAmplitude / 30;
+                } else {
+                    enemy.y -= enemy.zigzagSpeed * zigzagAmplitude / 30;
+                }
+                if (enemy.y <= 0 || enemy.y + enemy.height >= canvas.height) {
+                    enemy.directionY *= -1;
+                }
+            }
             if (enemy.x + enemy.width < 0) {
                 enemies.splice(index, 1);
                 score += 1;
@@ -231,14 +250,75 @@ function updateObstacles() {
     drawSpecialStar();
 }
 
-function drawMissile(enemy) {
-    context.fillStyle = enemy.color;
+function drawEnemyShape(enemy, points, craters = false) {
     context.beginPath();
-    context.moveTo(enemy.x, enemy.y);
-    context.lineTo(enemy.x, enemy.y + enemy.height);
-    context.lineTo(enemy.x + enemy.width, enemy.y + enemy.height / 2);
+    const radius = enemy.width / 2;
+    for (let i = 0; i < points; i++) {
+        const angle = (i / points) * (Math.PI * 2);
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) {
+            context.moveTo(x, y);
+        } else {
+            context.lineTo(x, y);
+        }
+    }
     context.closePath();
     context.fill();
+
+    if (craters) {
+        addCraters(enemy);
+        drawCraters(enemy);
+    }
+}
+
+function addCraters(enemy, craterCount = 5) {
+    if (!enemy.craters) {
+        enemy.craters = [];
+        for (let i = 0; i < craterCount; i++) {
+            const craterX = Math.random() * enemy.width - enemy.width / 2;
+            const craterY = Math.random() * enemy.height - enemy.height / 2;
+            const craterRadius = Math.random() * 2 + 1;
+            enemy.craters.push({ x: craterX, y: craterY, r: craterRadius });
+        }
+    }
+}
+
+function drawCraters(enemy) {
+    context.fillStyle = 'black';
+    enemy.craters.forEach(crater => {
+        context.beginPath();
+        context.arc(crater.x, crater.y, crater.r, 0, Math.PI * 2);
+        context.fill();
+    });
+}
+
+function drawRotatingShape(enemy, drawShape) {
+    context.save();
+    context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+    if (enemy.rotationSpeed) {
+        context.rotate((performance.now() / 1000) * 2 * Math.PI * enemy.rotationSpeed);
+    }
+    context.fillStyle = enemy.color;
+    drawShape(enemy);
+    context.restore();
+}
+
+function drawMissile(enemy) {
+    context.save();
+    context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+    const dx = spaceship.x - enemy.x;
+    const dy = spaceship.y - enemy.y;
+    const angle = Math.atan2(dy, dx);
+    context.rotate(angle);
+    context.fillStyle = enemy.color;
+    context.beginPath();
+    context.moveTo(-enemy.width / 2, -enemy.height / 2);
+    context.lineTo(enemy.width / 2, 0);
+    context.lineTo(-enemy.width / 2, enemy.height / 2);
+    context.closePath();
+    context.fill();
+    context.restore();
 }
 
 function drawAsteroid(enemy) {
@@ -248,18 +328,35 @@ function drawAsteroid(enemy) {
     context.fill();
 }
 
-function drawRotatingEnemy(enemy) {
-    context.save();
-    context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-    context.rotate((performance.now() / 1000) * 2 * Math.PI);
-    context.fillStyle = enemy.color;
+function drawZigzagEnemyShape(enemy) {
     context.beginPath();
-    context.moveTo(-enemy.width / 2, -enemy.height / 2);
-    context.lineTo(enemy.width / 2, -enemy.height / 2);
-    context.lineTo(0, enemy.height / 2);
+    for (let i = 0; i < 12; i++) {
+        let angle = i * Math.PI / 6;
+        let radius = i % 2 === 0 ? enemy.width / 2 : enemy.width / 4;
+        context.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
     context.closePath();
     context.fill();
-    context.restore();
+}
+
+function drawZigzagEnemy(enemy) {
+    drawRotatingShape(enemy, drawZigzagEnemyShape);
+}
+
+function drawRotatingEnemyShape(enemy) {
+    drawEnemyShape(enemy, 6, true);
+}
+
+function drawRotatingEnemy(enemy) {
+    drawRotatingShape(enemy, drawRotatingEnemyShape);
+}
+
+function drawCometEnemyShape(enemy) {
+    drawEnemyShape(enemy, 16, true);
+}
+
+function drawCometEnemy(enemy) {
+    drawRotatingShape(enemy, drawCometEnemyShape);
 }
 
 function createStars(count) {
