@@ -131,6 +131,18 @@ function updateSpaceship() {
     } else if (spaceship.isMovingDown) {
         spaceship.y = canvas.height - 15;
     }
+
+    if (spaceship.isMovingLeft && spaceship.x - spaceship.speed > 10) {
+        spaceship.x -= spaceship.speed;
+    } else if (spaceship.isMovingLeft) {
+        spaceship.x = 10;
+    }
+
+    if (spaceship.isMovingRight && spaceship.x + spaceship.speed < canvas.width - spaceship.width - 10) {
+        spaceship.x += spaceship.speed;
+    } else if (spaceship.isMovingRight) {
+        spaceship.x = canvas.width - spaceship.width - 10;
+    }
 }
 
 function drawBullets() {
@@ -600,6 +612,12 @@ document.addEventListener('keydown', event => {
     if (event.code === 'ArrowDown') {
         spaceship.isMovingDown = true;
     }
+    if (event.code === 'ArrowLeft') {
+        spaceship.isMovingLeft = true;
+    }
+    if (event.code === 'ArrowRight') {
+        spaceship.isMovingRight = true;
+    }
     if (event.code === 'Space') {
         spaceship.shoot();
     }
@@ -611,6 +629,12 @@ document.addEventListener('keyup', event => {
     }
     if (event.code === 'ArrowDown') {
         spaceship.isMovingDown = false;
+    }
+    if (event.code === 'ArrowLeft') {
+        spaceship.isMovingLeft = false;
+    }
+    if (event.code === 'ArrowRight') {
+        spaceship.isMovingRight = false;
     }
 });
 
@@ -657,6 +681,8 @@ document.getElementById('restart-button').addEventListener('click', () => {
 document.getElementById('start-button').addEventListener('click', () => {
     document.getElementById('up-button').classList.add('hidden');
     document.getElementById('down-button').classList.add('hidden');
+    document.getElementById('left-button').classList.add('hidden');
+    document.getElementById('right-button').classList.add('hidden');
     document.getElementById('shoot-button').classList.add('hidden');
 
     document.getElementById('start-screen').classList.add('hidden');
@@ -668,6 +694,8 @@ document.getElementById('start-button').addEventListener('click', () => {
 document.getElementById('start-button').addEventListener('touchstart', () => {
     document.getElementById('up-button').classList.remove('hidden');
     document.getElementById('down-button').classList.remove('hidden');
+    document.getElementById('left-button').classList.remove('hidden');
+    document.getElementById('right-button').classList.remove('hidden');
     document.getElementById('shoot-button').classList.remove('hidden');
 
     document.getElementById('start-screen').classList.add('hidden');
@@ -688,6 +716,20 @@ document.getElementById('down-button').addEventListener('touchstart', () => {
 });
 document.getElementById('down-button').addEventListener('touchend', () => {
     spaceship.isMovingDown = false;
+});
+
+document.getElementById('left-button').addEventListener('touchstart', () => {
+    spaceship.isMovingLeft = true;
+});
+document.getElementById('left-button').addEventListener('touchend', () => {
+    spaceship.isMovingLeft = false;
+});
+
+document.getElementById('right-button').addEventListener('touchstart', () => {
+    spaceship.isMovingRight = true;
+});
+document.getElementById('right-button').addEventListener('touchend', () => {
+    spaceship.isMovingRight = false;
 });
 
 document.getElementById('shoot-button').addEventListener('touchstart', () => {

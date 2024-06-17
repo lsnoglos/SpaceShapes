@@ -89,7 +89,7 @@ button {
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
-    box-shadow: 0px 0px 10px rgba(255, 255, 255, 1);
+    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
 }
 
 canvas {
@@ -100,25 +100,71 @@ canvas {
 
 #controls {
     position: absolute;
-    bottom: 20px;
+    bottom: 10px;
     width: 100%;
-    text-align: center;
     display: flex;
-    justify-content: center;
-    gap: 20px;
+    justify-content: space-between;
+    padding: 0 10px;
 }
 
-#controls button {
-    background-color: #444;
+.control-cross {
+    position: absolute;
+    bottom: 0px;
+    left: 20px;
+    display: grid;
+    grid-template-areas: 
+        "up"
+        "left"
+        "right"
+        "down";
+    gap: 0px;
+    align-items: center;
+    justify-items: center;
+}
+
+.control-cross button {
+    background-color: rgba(68, 68, 68, 0.2);
     border: none;
     color: white;
-    padding: 15px;
+    padding: 0px;
     font-size: 20px;
-    border-radius: 50%;
+    border-radius: 10%;
     cursor: pointer;
-    width: 60px;
+    width: 40px;
+    height: 40px;
+}
+
+.control-cross #up-button {
+    grid-area: up;
+}
+
+.control-cross #down-button {
+    grid-area: down;
+}
+
+.control-cross #left-button {
+    grid-area: left;
+}
+
+.control-cross #right-button {
+    grid-area: right;
+}
+
+#shoot-button {
+    background-color: rgba(68, 68, 68, 0.2);
+    border: none;
+    color: white;
+    padding: 10px;
+    font-size: 20px;
+    border-radius: 10%;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    bottom: 0px;
+    right: 20px;
 }
 
 #controls button:active {
-    background-color: #666;
+    background-color: rgba(102, 102, 102, 0.4);
 }
