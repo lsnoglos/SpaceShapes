@@ -11,12 +11,27 @@ const enemySpawnRates = [1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.
 const enemySpeeds = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.25]; // max 8
 const spaceshipSpeeds = [5, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.4, 7.7, 8, 8.4, 8.8, 9.1, 9.4, 9.7, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12, 12.3]; //max 12
 
+let shootingInterval = null;
+let specialWeapon = null;
+const specialWeaponInterval = 10 * 1000;
+let lastSpecialWeaponSpawnTime = 0;
+let specialWeaponQueue = [];
+let lastShotTime = 0;
+let capturedSpecialWeapons = new Set();
+
+const specialWeapons = [
+    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 4, level: 1, enemyDamage: 1, speed: 5, frequency: 250, icon: '⚪', isDefault: true },
+    { name: 'orange shoot', colorBullet: 'orange', sizeBullet: 6, level: 2, enemyDamage: 2, speed: 10, frequency: 200, icon: '🍑' },
+    { name: 'strong', colorBullet: 'lightGreen', sizeBullet: 8, level: 4, enemyDamage: 3, speed: 15, frequency: 150, icon: '⚡' },
+    { name: 'Laser', colorBullet: 'blue', sizeBullet: 10, level: 6, enemyDamage: 4, speed: 20, frequency: 100, icon: '☢️' }
+];
+
 let enemies = [];
 let enemySpeed = enemySpeeds[0];
 let enemySpawnInterval = enemySpawnRates[0];
 
 let specialStar = null;
-const specialStarInterval = 5 * 1000;
+const specialStarInterval = (Math.random() * 10 + 5) * 1000;
 let lastSpecialStarSpawnTime = 0;
 let BonusPointsByStar = 10;
 let flashTime = 0;
@@ -24,7 +39,7 @@ let flashTime = 0;
 let isGameOver = false;
 let score = 0;
 let level = 1;
-const pointsPerLevel = 30;
+const pointsPerLevel = 40;
 
 let isPaused = false;
 
@@ -36,13 +51,36 @@ const spaceship = {
     color: 'white',
     speed: spaceshipSpeeds[0],
     bullets: [],
+    currentWeapon: specialWeapons.find(weapon => weapon.isDefault),
     shoot() {
-        this.bullets.push({ x: this.x + this.width, y: this.y, width: 5, height: 2, speed: 5 });
+        const now = Date.now();
+        const weapon = this.currentWeapon;
+        if (now - lastShotTime >= weapon.frequency) {
+            lastShotTime = now;
+            const bulletSpeed = weapon.speed;
+            const bulletColor = weapon.colorBullet;
+            const bulletDamage = weapon.enemyDamage;
+            const bulletWidth = weapon.sizeBullet;
+            const bulletHeight = weapon.sizeBullet;
+
+            for (let i = 0; i < weapon.frequency / 1000; i++) {
+                this.bullets.push({
+                    x: this.x + this.width,
+                    y: this.y,
+                    width: bulletWidth,
+                    height: bulletHeight,
+                    speed: bulletSpeed,
+                    color: bulletColor,
+                    damage: bulletDamage,
+                    icon: weapon.icon
+                });
+            }
+        }
     }
 };
 
 const enemyTypes = [
-    { type: 'darkRed', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
+    { type: 'red', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
     { type: 'blue', hits: 1, draw: drawMissile, minLevel: 2, createCraters: true },
     { type: 'white', hits: 1, draw: drawMissile, minLevel: 3, createCraters: true },
     { type: 'orange', hits: 1, draw: drawCometEnemy, minLevel: 4, rotationSpeed: 0.08, createCraters: true },
@@ -67,6 +105,7 @@ function draw() {
     drawBullets();
     drawEnemies();
     drawEnemyBullets();
+    drawSpecialWeapon();
     updateObstacles();
 
     context.fillStyle = 'white';
@@ -166,18 +205,19 @@ function updateSpaceship() {
 
 function drawBullets() {
     spaceship.bullets.forEach((bullet, index) => {
-        context.fillStyle = 'yellow';
-        context.shadowColor = 'yellow';
-        context.shadowBlur = 10;
+        context.save();
+        context.fillStyle = bullet.color;
+        context.shadowColor = bullet.color;
+        context.shadowBlur = 30;
         context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
 
         bullet.x += bullet.speed;
         if (bullet.x > canvas.width) {
             spaceship.bullets.splice(index, 1);
         }
+        context.restore();
     });
 }
-
 
 function updateBullets() {
     spaceship.bullets.forEach((bullet, bulletIndex) => {
@@ -186,12 +226,17 @@ function updateBullets() {
                 bullet.x + bullet.width > enemy.x &&
                 bullet.y < enemy.y + enemy.height &&
                 bullet.y + bullet.height > enemy.y) {
-                enemy.hits--;
-                spaceship.bullets.splice(bulletIndex, 1);
-                if (enemy.hits === 0) {
+                while (bullet.damage > 0 && enemy.hits > 0) {
+                    enemy.hits--;
+                    bullet.damage--;
+                }
+                if (enemy.hits <= 0) {
                     enemies.splice(enemyIndex, 1);
                     score += enemyTypes.find(type => type.type === enemy.color).hits;
                     updateScoreUI();
+                }
+                if (bullet.damage <= 0) {
+                    spaceship.bullets.splice(bulletIndex, 1);
                 }
             }
         });
@@ -262,7 +307,12 @@ function drawEnemies() {
                 enemies.splice(index, 1);
             }
         } else {
+            context.save();
+            context.shadowColor = enemy.color;
+            context.shadowBlur = 20;
             enemy.draw(enemy);
+            context.restore();
+
             enemy.x -= enemy.speed;
             if (enemy.diagonal) {
                 enemy.y += enemy.speed * enemy.directionY;
@@ -291,6 +341,59 @@ function drawEnemies() {
     });
 }
 
+function createSpecialWeapon() {
+    const availableWeapons = specialWeapons.filter(weapon => weapon.level === level && !capturedSpecialWeapons.has(weapon.name) && weapon.name !== spaceship.currentWeapon.name);
+
+    if (availableWeapons.length === 0) return null;
+
+    const weapon = availableWeapons[Math.floor(Math.random() * availableWeapons.length)];
+    return {
+        x: canvas.width,
+        y: Math.random() * canvas.height,
+        width: 20,
+        height: 20,
+        speed: 2,
+        color: weapon.colorBullet,
+        damage: weapon.enemyDamage,
+        icon: weapon.icon,
+        name: weapon.name
+    };
+}
+function drawSpecialWeapon() {
+    if (specialWeapon) {
+        context.save();
+        context.fillStyle = specialWeapon.color;
+        context.shadowColor = specialWeapon.color;
+        context.shadowBlur = 30;
+        context.font = '20px Arial';
+        context.fillText(specialWeapon.icon, specialWeapon.x, specialWeapon.y + specialWeapon.height);
+        specialWeapon.x -= specialWeapon.speed;
+        if (specialWeapon.x + specialWeapon.width < 0) {
+            specialWeapon = null;
+        }
+        context.restore();
+    }
+}
+
+function drawSpecialWeapon() {
+    if (specialWeapon) {
+        const now = Date.now();
+        const blink = Math.floor(now / 500) % 2 === 0;
+
+        context.save();
+        context.fillStyle = specialWeapon.color;
+        context.shadowColor = specialWeapon.color;
+        context.shadowBlur = blink ? 30 : 0;
+        context.font = '20px Arial';
+        context.fillText(specialWeapon.icon, specialWeapon.x, specialWeapon.y + specialWeapon.height);
+        specialWeapon.x -= specialWeapon.speed;
+        if (specialWeapon.x + specialWeapon.width < 0) {
+            specialWeapon = null;
+        }
+        context.restore();
+    }
+}
+
 function generateObstacles() {
     if (Math.random() < enemySpawnInterval / 60) {
         enemies.push(createEnemy());
@@ -298,6 +401,15 @@ function generateObstacles() {
     if (!specialStar && (Date.now() - lastSpecialStarSpawnTime) > specialStarInterval) {
         createSpecialStar();
         lastSpecialStarSpawnTime = Date.now();
+    }
+    if (!specialWeapon && (Date.now() - lastSpecialWeaponSpawnTime) > specialWeaponInterval) {
+        const currentLevelWeapon = specialWeapons.find(weapon => weapon.level === level && weapon.name !== spaceship.currentWeapon.name);
+        if (currentLevelWeapon && !capturedSpecialWeapons.has(currentLevelWeapon.name)) {
+            specialWeapon = createSpecialWeapon();
+            if (specialWeapon) {
+                lastSpecialWeaponSpawnTime = Date.now();
+            }
+        }
     }
 }
 
@@ -551,7 +663,7 @@ function drawSpecialStar() {
 }
 
 function checkCollisions() {
-
+    
     const collisionBox = {
         x: spaceship.x,
         y: spaceship.y - 10,
@@ -590,6 +702,16 @@ function checkCollisions() {
         });
         flashTime = 30;
     }
+
+    if (specialWeapon &&
+        collisionBox.x < specialWeapon.x + specialWeapon.width &&
+        collisionBox.x + collisionBox.width > specialWeapon.x &&
+        collisionBox.y < specialWeapon.y + specialWeapon.height &&
+        collisionBox.y + collisionBox.height > specialWeapon.y) {
+        spaceship.currentWeapon = specialWeapons.find(weapon => weapon.name === specialWeapon.name);
+        capturedSpecialWeapons.add(specialWeapon.name);
+        specialWeapon = null;
+    }
 }
 
 function updateLevel() {
@@ -606,6 +728,10 @@ function updateLevel() {
     }
 
     updateLevelUI();
+    if (specialWeapon && specialWeapon.level <= level) {
+        specialWeaponQueue.push(specialWeapon);
+        specialWeapon = null;
+    }
 }
 
 function update() {
@@ -643,6 +769,9 @@ document.addEventListener('keydown', event => {
     }
     if (event.code === 'Space') {
         spaceship.shoot();
+        if (!shootingInterval) {
+            shootingInterval = setInterval(() => spaceship.shoot(), spaceship.currentWeapon.frequency);
+        }
     }
 });
 
@@ -658,6 +787,10 @@ document.addEventListener('keyup', event => {
     }
     if (event.code === 'ArrowRight') {
         spaceship.isMovingRight = false;
+    }
+    if (event.code === 'Space') {
+        clearInterval(shootingInterval);
+        shootingInterval = null;
     }
 });
 
@@ -694,8 +827,11 @@ document.getElementById('restart-button').addEventListener('click', () => {
     enemySpeed = enemySpeeds[0];
     enemySpawnInterval = enemySpawnRates[0];
     spaceship.speed = spaceshipSpeeds[0];
+    spaceship.currentWeapon = specialWeapons.find(weapon => weapon.isDefault);
     enemies = [];
     spaceship.bullets = [];
+    clearInterval(shootingInterval);
+    shootingInterval = null;
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('pause-button').classList.remove('hidden');
     update();
@@ -756,7 +892,15 @@ document.getElementById('right-button').addEventListener('touchend', () => {
 });
 
 document.getElementById('shoot-button').addEventListener('touchstart', () => {
-    spaceship.shoot();
+    spaceship.shoot(); 
+    if (!shootingInterval) {
+        shootingInterval = setInterval(() => spaceship.shoot(), spaceship.currentWeapon.frequency);
+    }
+});
+
+document.getElementById('shoot-button').addEventListener('touchend', () => {
+    clearInterval(shootingInterval);
+    shootingInterval = null;
 });
 
 function animateStartScreen() {
