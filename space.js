@@ -7,9 +7,33 @@ let stars = [];
 let planets = [];
 let enemyBullets = [];
 
-const enemySpawnRates = [1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2, 2.05, 2.1, 2.15, 2.2]; //max 12
-const enemySpeeds = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.25]; // max 8
-const spaceshipSpeeds = [5, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.4, 7.7, 8, 8.4, 8.8, 9.1, 9.4, 9.7, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12, 12.3]; //max 12
+function generador(cantidad, valorInicial, incremento) {
+    let arreglo = [];
+    for (let i = 0; i < cantidad; i++) {
+        arreglo.push(valorInicial + (i * incremento));
+    }
+    return arreglo;
+}
+
+function setDifficulty(difficulty) {
+    if (difficulty === "easy") {
+        enemySpawnRates = generador(25, 1, 0.01);
+        enemySpeeds = generador(25, 0.01, 0.01);
+        spaceshipSpeeds = generador(25, 5, 0.1);
+    } else if (difficulty === "medium") {
+        enemySpawnRates = generador(25, 1, 0.1);
+        enemySpeeds = generador(25, 0.5, 0.1);
+        spaceshipSpeeds = generador(25, 5, 0.3);
+    } else if (difficulty === "hard") {
+        enemySpawnRates = generador(25, 2, 0.5);
+        enemySpeeds = generador(25, 1, 0.3);
+        spaceshipSpeeds = generador(25, 5, 0.4);
+    }
+}
+
+let enemySpawnRates = [];
+let enemySpeeds = [];
+let spaceshipSpeeds = [];
 
 let shootingInterval = null;
 let specialWeapon = null;
@@ -805,7 +829,7 @@ function updateScoreUI() {
 document.getElementById('pause-button').addEventListener('click', () => {
     isPaused = !isPaused;
     document.getElementById('pause-message').classList.toggle('hidden', !isPaused);
-    document.getElementById('pause-button').classList.toggle('hidden', isPaused); // Hide pause button when paused
+    document.getElementById('pause-button').classList.toggle('hidden', isPaused); 
     if (isPaused) {
         cancelAnimationFrame(animationFrameId);
     } else {
@@ -816,11 +840,60 @@ document.getElementById('pause-button').addEventListener('click', () => {
 document.getElementById('resume-button').addEventListener('click', () => {
     isPaused = false;
     document.getElementById('pause-message').classList.add('hidden');
-    document.getElementById('pause-button').classList.remove('hidden'); // Show pause button when resumed
+    document.getElementById('pause-button').classList.remove('hidden');
     update();
 });
 
 document.getElementById('restart-button').addEventListener('click', () => {
+
+    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    setDifficulty(selectedDifficulty);
+
+    shootingInterval = null;
+    specialWeapon = null;
+    lastSpecialWeaponSpawnTime = 0;
+    specialWeaponQueue = [];
+    lastShotTime = 0;
+    capturedSpecialWeapons = new Set();
+
+    specialStar = null;
+    lastSpecialStarSpawnTime = 0;
+    BonusPointsByStar = 10;
+    flashTime = 0;
+
+    isGameOver = false;
+    score = 0;
+    level = 1;
+    enemySpeed = enemySpeeds[0];
+    enemySpawnInterval = enemySpawnRates[0];
+    spaceship.speed = spaceshipSpeeds[0];
+    spaceship.currentWeapon = specialWeapons.find(weapon => weapon.isDefault);
+    enemies = [];
+    spaceship.bullets = [];
+    clearInterval(shootingInterval);
+    shootingInterval = null;
+    document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('pause-button').classList.remove('hidden');
+    update();
+});
+
+document.getElementById('restart-button').addEventListener('touchstart', () => {
+
+    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    setDifficulty(selectedDifficulty);
+
+    shootingInterval = null;
+    specialWeapon = null;
+    lastSpecialWeaponSpawnTime = 0;
+    specialWeaponQueue = [];
+    lastShotTime = 0;
+    capturedSpecialWeapons = new Set();
+
+    specialStar = null;
+    lastSpecialStarSpawnTime = 0;
+    BonusPointsByStar = 10;
+    flashTime = 0;
+
     isGameOver = false;
     score = 0;
     level = 1;
@@ -838,6 +911,9 @@ document.getElementById('restart-button').addEventListener('click', () => {
 });
 
 document.getElementById('start-button').addEventListener('click', () => {
+    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    setDifficulty(selectedDifficulty);
+
     document.getElementById('up-button').classList.add('hidden');
     document.getElementById('down-button').classList.add('hidden');
     document.getElementById('left-button').classList.add('hidden');
@@ -851,6 +927,9 @@ document.getElementById('start-button').addEventListener('click', () => {
 });
 
 document.getElementById('start-button').addEventListener('touchstart', () => {
+    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    setDifficulty(selectedDifficulty);
+
     document.getElementById('up-button').classList.remove('hidden');
     document.getElementById('down-button').classList.remove('hidden');
     document.getElementById('left-button').classList.remove('hidden');

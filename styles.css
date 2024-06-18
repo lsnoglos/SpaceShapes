@@ -180,3 +180,7 @@ button:active {
 .control-cross button, #shoot-button {
     box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
 }
+
+input[type="radio"] {
+    margin-right: 5px;
+}
