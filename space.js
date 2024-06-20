@@ -3,6 +3,19 @@ const context = canvas.getContext('2d');
 canvas.width = 400;
 canvas.height = 750;
 
+const enemyShootSound = new Audio('assets/sounds/EnemyShooting.mp3');
+const enemyImpactSound = new Audio('assets/sounds/EnemyImpact.mp3');
+const enemyExplodeSound = new Audio('assets/sounds/EnemyExploit.mp3');
+const destroyAllEnemiesSound = new Audio('assets/sounds/destroyAllEnemy.mp3');
+const gameOverSound = new Audio('assets/sounds/gameOver.mp3');
+const newBulletSound = new Audio('assets/sounds/newBullet.mp3');
+const backgroundMusic = new Audio('assets/sounds/play.mp3');
+
+enemyExplodeSound.volume = 0.03;
+backgroundMusic.volume = 0.15;
+
+backgroundMusic.loop = true;
+
 let stars = [];
 let planets = [];
 let enemyBullets = [];
@@ -44,12 +57,12 @@ let lastShotTime = 0;
 let capturedSpecialWeapons = new Set();
 
 const specialWeapons = [
-    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, level: 1, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, icon: '🚀', isDefault: true },
-    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 2, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, icon: '🚀' },
-    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 3, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, icon: '🚀' },
-    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 4, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, icon: '🚀' },
-    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 5, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, icon: '🚀', doubleShoot: true },
-    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 6, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, icon: '🚀', crossShoot: true },
+    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, level: 1, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀', isDefault: true },
+    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 2, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀' },
+    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 3, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀' },
+    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 4, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀' },
+    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 5, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀', doubleShoot: true },
+    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 6, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀', crossShoot: true },
 ];
 
 let enemies = [];
@@ -88,6 +101,10 @@ const spaceship = {
             const bulletDamage = weapon.enemyDamage;
             const bulletWidth = weapon.sizeBullet;
             const bulletHeight = weapon.sizeBullet;
+
+            const shootSound = new Audio(weapon.sound);
+            shootSound.volume = 0.15;
+            shootSound.play();
 
             if (weapon.crossShoot) {
                 this.bullets.push(createBullet(this.x + this.width, this.y, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, bulletSpeed, 0, weapon.impactSize));
@@ -264,7 +281,7 @@ function createBullet(x, y, width, height, speed, color, damage, vx, vy, impactS
             context.fillStyle = this.color;
             context.shadowColor = 'lightBlue';
             context.shadowBlur = 7;
-            
+
             if (vx > 0) {
                 context.shadowOffsetX = -6;
                 context.shadowOffsetY = 0;
@@ -278,7 +295,7 @@ function createBullet(x, y, width, height, speed, color, damage, vx, vy, impactS
                 context.shadowOffsetX = 0;
                 context.shadowOffsetY = 6;
             }
-            
+
             context.beginPath();
             context.ellipse(this.x, this.y, this.width, this.height * 1.2, 0, 0, Math.PI * 2);
             context.fill();
@@ -315,6 +332,11 @@ function updateBullets() {
                         enemy.impactSize = bullet.impactSize;
                         score += enemyTypes.find(type => type.type === enemy.color).hits;
                         updateScoreUI();
+                        enemyExplodeSound.currentTime = 0;
+                        enemyExplodeSound.play();
+                    } else {
+                        enemyImpactSound.currentTime = 0;
+                        enemyImpactSound.play();
                     }
                 }
                 if (bullet.damage <= 0) {
@@ -395,13 +417,13 @@ function drawEnemies() {
         } else if (enemy.finalHit) {
             context.save();
             context.shadowColor = enemy.color;
-            context.shadowBlur = 40; 
+            context.shadowBlur = 40;
             context.globalAlpha = 1;
             enemy.width *= enemy.impactSize;
             enemy.height *= enemy.impactSize;
             enemy.draw(enemy);
             context.restore();
-            enemy.finalHitEffectTimer -= 20; 
+            enemy.finalHitEffectTimer -= 20;
             if (enemy.finalHitEffectTimer <= 0) {
                 enemy.shrink = true;
             }
@@ -626,6 +648,9 @@ function drawMissile(enemy) {
                 vy: Math.sin(angle) * 3,
                 color: 'red'
             });
+
+            enemyShootSound.currentTime = 0;
+            enemyShootSound.play();
         }
     }
 }
@@ -803,6 +828,9 @@ function checkCollisions() {
         score += BonusPointsByStar; // Bonus points
         updateScoreUI();
         specialStar = null;
+        destroyAllEnemiesSound.currentTime = 0;
+        destroyAllEnemiesSound.play();
+
         enemies.forEach(enemy => {
             enemy.shrink = true;
         });
@@ -815,6 +843,10 @@ function checkCollisions() {
         collisionBox.x + collisionBox.width > specialWeapon.x &&
         collisionBox.y < specialWeapon.y + specialWeapon.height &&
         collisionBox.y + collisionBox.height > specialWeapon.y) {
+
+        newBulletSound.currentTime = 0;
+        newBulletSound.play();
+
         spaceship.currentWeapon = specialWeapons.find(weapon => weapon.name === specialWeapon.name);
         capturedSpecialWeapons.add(specialWeapon.name);
         specialWeapon = null;
@@ -855,9 +887,16 @@ function update() {
     if (!isGameOver) {
         animationFrameId = requestAnimationFrame(update);
     } else {
+
+        gameOverSound.currentTime = 0;
+        gameOverSound.play();
+
         document.getElementById('game-over').classList.remove('hidden');
         document.getElementById('pause-button').classList.add('hidden');
         cancelAnimationFrame(animationFrameId);
+
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
     }
 }
 
@@ -889,19 +928,23 @@ document.getElementById('resume-button').addEventListener('click', () => {
 
 document.getElementById('restart-button').addEventListener('click', () => {
     resetGame();
+    backgroundMusic.play();
     update();
 });
 document.getElementById('restart-button').addEventListener('touchstart', () => {
     resetGame();
+    backgroundMusic.play();
     update();
 });
 
 document.getElementById('start-button').addEventListener('click', () => {
     startStatusButtons(false);
+    backgroundMusic.play();
     update();
 });
 document.getElementById('start-button').addEventListener('touchstart', () => {
     startStatusButtons(true);
+    backgroundMusic.play();
     update();
 });
 
