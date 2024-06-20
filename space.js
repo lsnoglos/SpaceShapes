@@ -44,10 +44,12 @@ let lastShotTime = 0;
 let capturedSpecialWeapons = new Set();
 
 const specialWeapons = [
-    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 4, level: 1, enemyDamage: 1, speed: 5, frequency: 250, icon: '⚪', isDefault: true },
-    { name: 'orange shoot', colorBullet: 'orange', sizeBullet: 6, level: 2, enemyDamage: 2, speed: 10, frequency: 200, icon: '🍑' },
-    { name: 'strong', colorBullet: 'lightGreen', sizeBullet: 8, level: 4, enemyDamage: 3, speed: 15, frequency: 150, icon: '⚡' },
-    { name: 'Laser', colorBullet: 'blue', sizeBullet: 10, level: 6, enemyDamage: 4, speed: 20, frequency: 100, icon: '☢️' }
+    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, level: 1, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, icon: '🚀', isDefault: true },
+    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 2, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, icon: '🚀' },
+    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 3, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, icon: '🚀' },
+    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 4, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, icon: '🚀' },
+    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 5, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, icon: '🚀', doubleShoot: true },
+    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 6, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, icon: '🚀', crossShoot: true },
 ];
 
 let enemies = [];
@@ -55,7 +57,7 @@ let enemySpeed = enemySpeeds[0];
 let enemySpawnInterval = enemySpawnRates[0];
 
 let specialStar = null;
-const specialStarInterval = (Math.random() * 10 + 5) * 1000;
+const specialStarInterval = (Math.random() * 30) * 1000;
 let lastSpecialStarSpawnTime = 0;
 let BonusPointsByStar = 10;
 let flashTime = 0;
@@ -63,7 +65,7 @@ let flashTime = 0;
 let isGameOver = false;
 let score = 0;
 let level = 1;
-const pointsPerLevel = 40;
+const pointsPerLevel = 50;
 
 let isPaused = false;
 
@@ -87,18 +89,27 @@ const spaceship = {
             const bulletWidth = weapon.sizeBullet;
             const bulletHeight = weapon.sizeBullet;
 
-            for (let i = 0; i < weapon.frequency / 1000; i++) {
-                this.bullets.push({
-                    x: this.x + this.width,
-                    y: this.y,
-                    width: bulletWidth,
-                    height: bulletHeight,
-                    speed: bulletSpeed,
-                    color: bulletColor,
-                    damage: bulletDamage,
-                    icon: weapon.icon
-                });
+            if (weapon.crossShoot) {
+                this.bullets.push(createBullet(this.x + this.width, this.y, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, bulletSpeed, 0, weapon.impactSize));
+                this.bullets.push(createBullet(this.x - bulletWidth, this.y, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, -bulletSpeed, 0, weapon.impactSize));
+                this.bullets.push(createBullet(this.x, this.y + bulletHeight, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, 0, bulletSpeed, weapon.impactSize));
+                this.bullets.push(createBullet(this.x, this.y - bulletHeight, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, 0, -bulletSpeed, weapon.impactSize));
+            } else if (weapon.doubleShoot) {
+                this.bullets.push(createBullet(this.x + this.width, this.y - bulletHeight / 0.4, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, bulletSpeed, 0, weapon.impactSize));
+                this.bullets.push(createBullet(this.x + this.width, this.y + bulletHeight / 0.4, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, bulletSpeed, 0, weapon.impactSize));
+            } else {
+                this.bullets.push(createBullet(this.x + this.width, this.y, bulletWidth, bulletHeight, bulletSpeed, bulletColor, bulletDamage, bulletSpeed, 0, weapon.impactSize));
             }
+
+            context.save();
+            context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            context.shadowBlur = 20;
+            context.shadowColor = 'yellow';
+            context.shadowOffsetX = 10;
+            context.beginPath();
+            context.arc(this.x + this.width, this.y, 15, 0, Math.PI * 2);
+            context.fill();
+            context.restore();
         }
     }
 };
@@ -118,7 +129,7 @@ function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     if (flashTime > 0) {
-        context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        context.fillStyle = 'rgba(255, 255, 255, 0.7)';
         context.fillRect(0, 0, canvas.width, canvas.height);
         flashTime--;
     }
@@ -136,69 +147,87 @@ function draw() {
 }
 
 function drawSpaceship() {
-    context.fillStyle = 'white'; //main
+    context.save();
     context.beginPath();
+    context.fillStyle = 'white'; //main
     context.moveTo(spaceship.x, spaceship.y);
-    context.lineTo(spaceship.x + 25, spaceship.y + 10); 
+    context.lineTo(spaceship.x + 25, spaceship.y + 10);
     context.lineTo(spaceship.x + 40, spaceship.y);
-    context.lineTo(spaceship.x + 25, spaceship.y - 10); 
+    context.lineTo(spaceship.x + 25, spaceship.y - 10);
     context.closePath();
     context.fill();
+    context.restore();
 
-    context.fillStyle = 'lightgray';
+    context.save();
     context.beginPath();
+    context.fillStyle = 'lightgray';
     context.moveTo(spaceship.x + 8, spaceship.y - 4);
     context.lineTo(spaceship.x + 20, spaceship.y - 4);
     context.lineTo(spaceship.x + 20, spaceship.y + 4);
     context.lineTo(spaceship.x + 8, spaceship.y + 4);
     context.closePath();
     context.fill();
+    context.restore();
 
-    context.fillStyle = 'rgba(0, 200, 255, 0.5)';
+    context.save();
     context.beginPath();
+    context.fillStyle = 'rgba(0, 200, 255, 0.5)';
     context.moveTo(spaceship.x + 15, spaceship.y - 5);
     context.lineTo(spaceship.x + 30, spaceship.y);
     context.lineTo(spaceship.x + 15, spaceship.y + 5);
     context.closePath();
     context.fill();
+    context.restore();
 
-    context.fillStyle = 'darkgray';
+    context.save();
     context.beginPath();
+    context.fillStyle = 'darkgray';
     context.moveTo(spaceship.x + 8, spaceship.y - 8);
     context.lineTo(spaceship.x, spaceship.y - 16);
     context.lineTo(spaceship.x, spaceship.y + 16);
     context.lineTo(spaceship.x + 8, spaceship.y + 8);
     context.closePath();
     context.fill();
+    context.restore();
 
-    context.fillStyle = 'gray'; //motor
+    context.save();
     context.beginPath();
+    context.fillStyle = 'gray'; //motor
     context.moveTo(spaceship.x, spaceship.y - 5);
     context.lineTo(spaceship.x - 5, spaceship.y - 5);
     context.lineTo(spaceship.x - 5, spaceship.y + 5);
     context.lineTo(spaceship.x, spaceship.y + 5);
     context.closePath();
     context.fill();
+    context.restore();
 
-    context.fillStyle = 'orange'; //fire
-    context.shadowColor = 'orange';
+    // Drawing the flame
+    context.save();
     context.beginPath();
+    context.fillStyle = 'orange';
+    context.shadowColor = 'orange';
+    context.shadowBlur = 30;
     context.moveTo(spaceship.x - 5, spaceship.y - 3);
-    context.lineTo(spaceship.x - 10, spaceship.y);
+    context.lineTo(spaceship.x - 10, spaceship.y - 6);
+    context.lineTo(spaceship.x - 15, spaceship.y - 3);
+    context.lineTo(spaceship.x - 20, spaceship.y);
+    context.lineTo(spaceship.x - 15, spaceship.y + 3);
+    context.lineTo(spaceship.x - 10, spaceship.y + 6);
     context.lineTo(spaceship.x - 5, spaceship.y + 3);
     context.closePath();
     context.fill();
+    context.restore();
 
+    context.save();
+    context.beginPath();
     context.strokeStyle = 'gray'; //lines
     context.lineWidth = 0.1;
-    context.beginPath();
     context.moveTo(spaceship.x + 10, spaceship.y - 2);
     context.lineTo(spaceship.x + 30, spaceship.y - 2);
     context.moveTo(spaceship.x + 10, spaceship.y + 2);
     context.lineTo(spaceship.x + 30, spaceship.y + 2);
     context.stroke();
-
-    context.shadowBlur = 11;
+    context.restore();
 }
 
 function updateSpaceship() {
@@ -227,19 +256,45 @@ function updateSpaceship() {
     }
 }
 
+function createBullet(x, y, width, height, speed, color, damage, vx, vy, impactSize) {
+    return {
+        x, y, width, height, speed, color, damage, vx, vy, impactSize,
+        draw() {
+            context.save();
+            context.fillStyle = this.color;
+            context.shadowColor = 'lightBlue';
+            context.shadowBlur = 7;
+            
+            if (vx > 0) {
+                context.shadowOffsetX = -6;
+                context.shadowOffsetY = 0;
+            } else if (vx < 0) {
+                context.shadowOffsetX = 6;
+                context.shadowOffsetY = 0;
+            } else if (vy > 0) {
+                context.shadowOffsetX = 0;
+                context.shadowOffsetY = -6;
+            } else if (vy < 0) {
+                context.shadowOffsetX = 0;
+                context.shadowOffsetY = 6;
+            }
+            
+            context.beginPath();
+            context.ellipse(this.x, this.y, this.width, this.height * 1.2, 0, 0, Math.PI * 2);
+            context.fill();
+            context.restore();
+        }
+    };
+}
+
 function drawBullets() {
     spaceship.bullets.forEach((bullet, index) => {
-        context.save();
-        context.fillStyle = bullet.color;
-        context.shadowColor = bullet.color;
-        context.shadowBlur = 30;
-        context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-
-        bullet.x += bullet.speed;
-        if (bullet.x > canvas.width) {
+        bullet.draw();
+        bullet.x += bullet.vx;
+        bullet.y += bullet.vy;
+        if (bullet.x > canvas.width || bullet.x < 0 || bullet.y > canvas.height || bullet.y < 0) {
             spaceship.bullets.splice(index, 1);
         }
-        context.restore();
     });
 }
 
@@ -253,17 +308,27 @@ function updateBullets() {
                 while (bullet.damage > 0 && enemy.hits > 0) {
                     enemy.hits--;
                     bullet.damage--;
-                }
-                if (enemy.hits <= 0) {
-                    enemies.splice(enemyIndex, 1);
-                    score += enemyTypes.find(type => type.type === enemy.color).hits;
-                    updateScoreUI();
+                    enemy.hitEffectTimer = enemy.hitEffectDuration;
+                    if (enemy.hits === 0) {
+                        enemy.finalHit = true;
+                        enemy.finalHitEffectTimer = 30;
+                        enemy.impactSize = bullet.impactSize;
+                        score += enemyTypes.find(type => type.type === enemy.color).hits;
+                        updateScoreUI();
+                    }
                 }
                 if (bullet.damage <= 0) {
                     spaceship.bullets.splice(bulletIndex, 1);
                 }
             }
         });
+    });
+}
+
+function drawEnemyBullets() {
+    enemyBullets.forEach((bullet, index) => {
+        context.fillStyle = bullet.color;
+        context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
     });
 }
 
@@ -277,13 +342,6 @@ function updateEnemyBullets() {
     });
 }
 
-function drawEnemyBullets() {
-    enemyBullets.forEach((bullet, index) => {
-        context.fillStyle = bullet.color;
-        context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-    });
-}
-
 function createEnemy() {
     const availableTypes = enemyTypes.filter(type => type.minLevel <= level);
     const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
@@ -293,7 +351,7 @@ function createEnemy() {
         y: Math.random() * canvas.height,
         width: size,
         height: size,
-        speed: enemySpeed + Math.random() * 2,
+        speed: enemySpeed + Math.random() * 0.9,
         color: type.type,
         hits: type.hits,
         draw: type.draw,
@@ -308,7 +366,11 @@ function createEnemy() {
         rotationSpeed: type.rotationSpeed || 0.1,
         createCraters: type.createCraters || false,
         followsSpaceship: type.followsSpaceship || false,
-        shootsAtLevel: type.shootsAtLevel || false
+        shootsAtLevel: type.shootsAtLevel || false,
+        hitEffectDuration: 30,
+        hitEffectTimer: 0,
+        finalHit: false,
+        finalHitEffectTimer: 0,
     };
 }
 
@@ -320,7 +382,7 @@ function drawEnemies() {
             context.globalAlpha = Math.max(0, 1 - enemy.shrinkStep);
             context.fillStyle = enemy.color;
             context.shadowColor = 'rgba(255, 255, 255, 1)';
-            context.shadowBlur = Math.min(40, enemy.shrinkStep * 80); // ligth effect
+            context.shadowBlur = Math.min(40, enemy.shrinkStep * 80); // light effect
             context.beginPath();
             context.arc(enemy.x, enemy.y, Math.max(0, enemy.width / 2), 0, Math.PI * 2);
             context.fill();
@@ -330,10 +392,28 @@ function drawEnemies() {
             if (enemy.shrinkStep >= 1) {
                 enemies.splice(index, 1);
             }
+        } else if (enemy.finalHit) {
+            context.save();
+            context.shadowColor = enemy.color;
+            context.shadowBlur = 40; 
+            context.globalAlpha = 1;
+            enemy.width *= enemy.impactSize;
+            enemy.height *= enemy.impactSize;
+            enemy.draw(enemy);
+            context.restore();
+            enemy.finalHitEffectTimer -= 20; 
+            if (enemy.finalHitEffectTimer <= 0) {
+                enemy.shrink = true;
+            }
         } else {
             context.save();
             context.shadowColor = enemy.color;
-            context.shadowBlur = 20;
+            if (enemy.hitEffectTimer > 0) {
+                context.shadowBlur = 30;
+                enemy.hitEffectTimer -= 20;
+            } else {
+                context.shadowBlur = 20;
+            }
             enemy.draw(enemy);
             context.restore();
 
@@ -374,52 +454,55 @@ function createSpecialWeapon() {
     return {
         x: canvas.width,
         y: Math.random() * canvas.height,
-        width: 20,
-        height: 20,
+        width: 30,
+        height: 30,
         speed: 2,
         color: weapon.colorBullet,
         damage: weapon.enemyDamage,
         icon: weapon.icon,
-        name: weapon.name
+        name: weapon.name,
+        rotation: 0,
+        rotationSpeed: 0.05,
+        originalSize: 28,
+        animationType: 'breathing' //breathing or rotation
     };
-}
-function drawSpecialWeapon() {
-    if (specialWeapon) {
-        context.save();
-        context.fillStyle = specialWeapon.color;
-        context.shadowColor = specialWeapon.color;
-        context.shadowBlur = 30;
-        context.font = '20px Arial';
-        context.fillText(specialWeapon.icon, specialWeapon.x, specialWeapon.y + specialWeapon.height);
-        specialWeapon.x -= specialWeapon.speed;
-        if (specialWeapon.x + specialWeapon.width < 0) {
-            specialWeapon = null;
-        }
-        context.restore();
-    }
 }
 
 function drawSpecialWeapon() {
     if (specialWeapon) {
         const now = Date.now();
         const blink = Math.floor(now / 500) % 2 === 0;
-
         context.save();
         context.fillStyle = specialWeapon.color;
         context.shadowColor = specialWeapon.color;
-        context.shadowBlur = blink ? 30 : 0;
-        context.font = '20px Arial';
-        context.fillText(specialWeapon.icon, specialWeapon.x, specialWeapon.y + specialWeapon.height);
+
+        if (specialWeapon.animationType === 'rotation') {
+            context.shadowBlur = blink ? 25 : 0;
+            specialWeapon.rotation += specialWeapon.rotationSpeed;
+            context.translate(specialWeapon.x + specialWeapon.width / 2, specialWeapon.y + specialWeapon.height / 2);
+            context.rotate(specialWeapon.rotation);
+            context.font = '25px Arial';
+            context.fillText(specialWeapon.icon, -specialWeapon.width / 2, specialWeapon.height / 2);
+        } else if (specialWeapon.animationType === 'breathing') {
+            context.shadowBlur = 25;
+            const scale = 1 + 0.1 * Math.sin(now / 250);
+            context.translate(specialWeapon.x, specialWeapon.y);
+            context.scale(scale, scale);
+            context.font = `${specialWeapon.originalSize * scale}px Arial`;
+            context.fillText(specialWeapon.icon, 0, specialWeapon.height);
+        }
+
+        context.restore();
+
         specialWeapon.x -= specialWeapon.speed;
         if (specialWeapon.x + specialWeapon.width < 0) {
             specialWeapon = null;
         }
-        context.restore();
     }
 }
 
 function generateObstacles() {
-    if (Math.random() < enemySpawnInterval / 60) {
+    if (Math.random() < enemySpawnInterval / 100) {
         enemies.push(createEnemy());
     }
     if (!specialStar && (Date.now() - lastSpecialStarSpawnTime) > specialStarInterval) {
@@ -687,7 +770,6 @@ function drawSpecialStar() {
 }
 
 function checkCollisions() {
-    
     const collisionBox = {
         x: spaceship.x,
         y: spaceship.y - 10,
@@ -724,6 +806,7 @@ function checkCollisions() {
         enemies.forEach(enemy => {
             enemy.shrink = true;
         });
+        enemyBullets = [];
         flashTime = 30;
     }
 
@@ -778,6 +861,90 @@ function update() {
     }
 }
 
+function updateLevelUI() {
+    document.getElementById('level').innerText = `Level: ${level}`;
+}
+
+function updateScoreUI() {
+    document.getElementById('score').innerText = `Score: ${score}`;
+}
+
+document.getElementById('pause-button').addEventListener('click', () => {
+    isPaused = !isPaused;
+    document.getElementById('pause-message').classList.toggle('hidden', !isPaused);
+    document.getElementById('pause-button').classList.toggle('hidden', isPaused);
+    if (isPaused) {
+        cancelAnimationFrame(animationFrameId);
+    } else {
+        update();
+    }
+});
+
+document.getElementById('resume-button').addEventListener('click', () => {
+    isPaused = false;
+    document.getElementById('pause-message').classList.add('hidden');
+    document.getElementById('pause-button').classList.remove('hidden');
+    update();
+});
+
+document.getElementById('restart-button').addEventListener('click', () => {
+    resetGame();
+    update();
+});
+document.getElementById('restart-button').addEventListener('touchstart', () => {
+    resetGame();
+    update();
+});
+
+document.getElementById('start-button').addEventListener('click', () => {
+    startStatusButtons(false);
+    update();
+});
+document.getElementById('start-button').addEventListener('touchstart', () => {
+    startStatusButtons(true);
+    update();
+});
+
+document.getElementById('up-button').addEventListener('touchstart', () => {
+    spaceship.isMovingUp = true;
+});
+document.getElementById('up-button').addEventListener('touchend', () => {
+    spaceship.isMovingUp = false;
+});
+
+document.getElementById('down-button').addEventListener('touchstart', () => {
+    spaceship.isMovingDown = true;
+});
+document.getElementById('down-button').addEventListener('touchend', () => {
+    spaceship.isMovingDown = false;
+});
+
+document.getElementById('left-button').addEventListener('touchstart', () => {
+    spaceship.isMovingLeft = true;
+});
+document.getElementById('left-button').addEventListener('touchend', () => {
+    spaceship.isMovingLeft = false;
+});
+
+document.getElementById('right-button').addEventListener('touchstart', () => {
+    spaceship.isMovingRight = true;
+});
+document.getElementById('right-button').addEventListener('touchend', () => {
+    spaceship.isMovingRight = false;
+});
+
+document.getElementById('shoot-button').addEventListener('touchstart', () => {
+    spaceship.shoot();
+    if (!shootingInterval) {
+        shootingInterval = setInterval(() => spaceship.shoot(), spaceship.currentWeapon.frequency);
+    }
+});
+
+document.getElementById('shoot-button').addEventListener('touchend', () => {
+    clearInterval(shootingInterval);
+    shootingInterval = null;
+});
+
 document.addEventListener('keydown', event => {
     if (event.code === 'ArrowUp') {
         spaceship.isMovingUp = true;
@@ -818,169 +985,21 @@ document.addEventListener('keyup', event => {
     }
 });
 
-function updateLevelUI() {
-    document.getElementById('level').innerText = `Level: ${level}`;
-}
-
-function updateScoreUI() {
-    document.getElementById('score').innerText = `Score: ${score}`;
-}
-
-document.getElementById('pause-button').addEventListener('click', () => {
-    isPaused = !isPaused;
-    document.getElementById('pause-message').classList.toggle('hidden', !isPaused);
-    document.getElementById('pause-button').classList.toggle('hidden', isPaused); 
-    if (isPaused) {
-        cancelAnimationFrame(animationFrameId);
-    } else {
-        update();
-    }
-});
-
-document.getElementById('resume-button').addEventListener('click', () => {
-    isPaused = false;
-    document.getElementById('pause-message').classList.add('hidden');
-    document.getElementById('pause-button').classList.remove('hidden');
-    update();
-});
-
-document.getElementById('restart-button').addEventListener('click', () => {
-
+function startStatusButtons(showButtons) {
+    const show = showButtons ? 'remove' : 'add';
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
     setDifficulty(selectedDifficulty);
 
-    shootingInterval = null;
-    specialWeapon = null;
-    lastSpecialWeaponSpawnTime = 0;
-    specialWeaponQueue = [];
-    lastShotTime = 0;
-    capturedSpecialWeapons = new Set();
-
-    specialStar = null;
-    lastSpecialStarSpawnTime = 0;
-    BonusPointsByStar = 10;
-    flashTime = 0;
-
-    isGameOver = false;
-    score = 0;
-    level = 1;
-    enemySpeed = enemySpeeds[0];
-    enemySpawnInterval = enemySpawnRates[0];
-    spaceship.speed = spaceshipSpeeds[0];
-    spaceship.currentWeapon = specialWeapons.find(weapon => weapon.isDefault);
-    enemies = [];
-    spaceship.bullets = [];
-    clearInterval(shootingInterval);
-    shootingInterval = null;
-    document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('pause-button').classList.remove('hidden');
-    update();
-});
-
-document.getElementById('restart-button').addEventListener('touchstart', () => {
-
-    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
-    setDifficulty(selectedDifficulty);
-
-    shootingInterval = null;
-    specialWeapon = null;
-    lastSpecialWeaponSpawnTime = 0;
-    specialWeaponQueue = [];
-    lastShotTime = 0;
-    capturedSpecialWeapons = new Set();
-
-    specialStar = null;
-    lastSpecialStarSpawnTime = 0;
-    BonusPointsByStar = 10;
-    flashTime = 0;
-
-    isGameOver = false;
-    score = 0;
-    level = 1;
-    enemySpeed = enemySpeeds[0];
-    enemySpawnInterval = enemySpawnRates[0];
-    spaceship.speed = spaceshipSpeeds[0];
-    spaceship.currentWeapon = specialWeapons.find(weapon => weapon.isDefault);
-    enemies = [];
-    spaceship.bullets = [];
-    clearInterval(shootingInterval);
-    shootingInterval = null;
-    document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('pause-button').classList.remove('hidden');
-    update();
-});
-
-document.getElementById('start-button').addEventListener('click', () => {
-    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
-    setDifficulty(selectedDifficulty);
-
-    document.getElementById('up-button').classList.add('hidden');
-    document.getElementById('down-button').classList.add('hidden');
-    document.getElementById('left-button').classList.add('hidden');
-    document.getElementById('right-button').classList.add('hidden');
-    document.getElementById('shoot-button').classList.add('hidden');
+    document.getElementById('up-button').classList[show]('hidden');
+    document.getElementById('down-button').classList[show]('hidden');
+    document.getElementById('left-button').classList[show]('hidden');
+    document.getElementById('right-button').classList[show]('hidden');
+    document.getElementById('shoot-button').classList[show]('hidden');
 
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('info-container').classList.remove('hidden');
     document.getElementById('pause-button').classList.remove('hidden');
-    update();
-});
-
-document.getElementById('start-button').addEventListener('touchstart', () => {
-    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
-    setDifficulty(selectedDifficulty);
-
-    document.getElementById('up-button').classList.remove('hidden');
-    document.getElementById('down-button').classList.remove('hidden');
-    document.getElementById('left-button').classList.remove('hidden');
-    document.getElementById('right-button').classList.remove('hidden');
-    document.getElementById('shoot-button').classList.remove('hidden');
-
-    document.getElementById('start-screen').classList.add('hidden');
-    document.getElementById('info-container').classList.remove('hidden');
-    document.getElementById('pause-button').classList.remove('hidden');
-    update();
-});
-
-document.getElementById('up-button').addEventListener('touchstart', () => {
-    spaceship.isMovingUp = true;
-});
-document.getElementById('up-button').addEventListener('touchend', () => {
-    spaceship.isMovingUp = false;
-});
-
-document.getElementById('down-button').addEventListener('touchstart', () => {
-    spaceship.isMovingDown = true;
-});
-document.getElementById('down-button').addEventListener('touchend', () => {
-    spaceship.isMovingDown = false;
-});
-
-document.getElementById('left-button').addEventListener('touchstart', () => {
-    spaceship.isMovingLeft = true;
-});
-document.getElementById('left-button').addEventListener('touchend', () => {
-    spaceship.isMovingLeft = false;
-});
-
-document.getElementById('right-button').addEventListener('touchstart', () => {
-    spaceship.isMovingRight = true;
-});
-document.getElementById('right-button').addEventListener('touchend', () => {
-    spaceship.isMovingRight = false;
-});
-
-document.getElementById('shoot-button').addEventListener('touchstart', () => {
-    spaceship.shoot(); 
-    if (!shootingInterval) {
-        shootingInterval = setInterval(() => spaceship.shoot(), spaceship.currentWeapon.frequency);
-    }
-});
-
-document.getElementById('shoot-button').addEventListener('touchend', () => {
-    clearInterval(shootingInterval);
-    shootingInterval = null;
-});
+}
 
 function animateStartScreen() {
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -988,6 +1007,41 @@ function animateStartScreen() {
     drawPlanets();
     drawSpaceship();
     requestAnimationFrame(animateStartScreen);
+}
+
+function resetGame() {
+    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    setDifficulty(selectedDifficulty);
+
+    shootingInterval = null;
+    specialWeapon = null;
+    lastSpecialWeaponSpawnTime = 0;
+    specialWeaponQueue = [];
+    lastShotTime = 0;
+    capturedSpecialWeapons = new Set();
+
+    specialStar = null;
+    lastSpecialStarSpawnTime = 0;
+    BonusPointsByStar = 10;
+    flashTime = 0;
+
+    isGameOver = false;
+    score = 0;
+    level = 1;
+    enemySpeed = enemySpeeds[0];
+    enemySpawnInterval = enemySpawnRates[0];
+    spaceship.speed = spaceshipSpeeds[0];
+    spaceship.currentWeapon = specialWeapons.find(weapon => weapon.isDefault);
+    enemies = [];
+    spaceship.bullets = [];
+    enemyBullets = [];
+    clearInterval(shootingInterval);
+    shootingInterval = null;
+    document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('pause-button').classList.remove('hidden');
+
+    updateScoreUI();
+    updateLevelUI();
 }
 
 createStars(100);
