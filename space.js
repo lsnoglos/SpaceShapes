@@ -77,7 +77,7 @@ let enemySpeed = enemySpeeds[0];
 let enemySpawnInterval = enemySpawnRates[0];
 
 let specialStar = null;
-let showStarIcon = false; 
+let showStarIcon = false;
 const specialStarInterval = (Math.random() * 60) * 1000;
 let lastSpecialStarSpawnTime = 0;
 let BonusPointsByStar = 10;
@@ -791,7 +791,7 @@ function drawSpecialStar() {
             context.font = `${specialStar.radius * 2}px Arial`;
             context.fillStyle = specialStar.colors[specialStar.colorIndex];
             context.fillText(specialStar.icon, specialStar.x, specialStar.y + specialStar.radius);
-        }else{
+        } else {
             context.fillStyle = specialStar.colors[specialStar.colorIndex];
             context.beginPath();
             for (let i = 0; i < 5; i++) {
@@ -956,27 +956,33 @@ document.getElementById('restart-button').addEventListener('touchstart', () => {
 });
 
 document.getElementById('start-button').addEventListener('click', () => {
-    const promise = backgroundMusic.play();
-    if (promise !== undefined) {
-        promise.then(_ => {
-            startStatusButtons(false);
-            update();
-        }).catch(error => {
-            console.log('Autoplay was prevented.');
-        });
-    }
+    startStatusButtons(false);
+    update();
+
+    setTimeout(() => {
+        const promise = backgroundMusic.play();
+        if (promise !== undefined) {
+            promise.then(_ => {
+            }).catch(error => {
+                console.log('Autoplay was prevented.');
+            });
+        }
+    }, 1000);
 });
 
 document.getElementById('start-button').addEventListener('touchstart', () => {
-    const promise = backgroundMusic.play();
-    if (promise !== undefined) {
-        promise.then(_ => {
-            startStatusButtons(true);
-            update();
-        }).catch(error => {
-            console.log('Autoplay was prevented.');
-        });
-    }
+    startStatusButtons(true);
+    update();
+
+    setTimeout(() => {
+        const promise = backgroundMusic.play();
+        if (promise !== undefined) {
+            promise.then(_ => {
+            }).catch(error => {
+                console.log('Autoplay was prevented.');
+            });
+        }
+    }, 1000);
 });
 
 document.getElementById('up-button').addEventListener('touchstart', () => {
