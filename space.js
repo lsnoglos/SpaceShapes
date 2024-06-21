@@ -65,11 +65,11 @@ let capturedSpecialWeapons = new Set();
 
 const specialWeapons = [
     { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, level: 1, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, sound: basicShoot, icon: '🚀', isDefault: true },
-    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 5, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, sound: orangeShoot, icon: '🚀' },
-    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 4, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, sound: strongShoot, icon: '🚀' },
-    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 3, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, sound: laserShoot, icon: '🚀' },
-    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 2, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, sound: doubleShoot, icon: '🚀', doubleShoot: true },
-    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 1, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, sound: crossShoot, icon: '🚀', crossShoot: true },
+    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 2, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, sound: orangeShoot, icon: '🚀' },
+    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 3, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, sound: strongShoot, icon: '🚀' },
+    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 4, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, sound: laserShoot, icon: '🚀' },
+    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 5, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, sound: doubleShoot, icon: '🚀', doubleShoot: true },
+    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 6, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, sound: crossShoot, icon: '🚀', crossShoot: true },
 ];
 
 let enemies = [];
@@ -956,13 +956,21 @@ document.getElementById('restart-button').addEventListener('touchstart', () => {
 });
 
 document.getElementById('start-button').addEventListener('click', () => {
+    if (backgroundMusic.paused) {
+        backgroundMusic.play().catch(error => {
+            console.error('Failed to play background music:', error);
+        });
+    }
     startStatusButtons(false);
-    backgroundMusic.play();
     update();
 });
 document.getElementById('start-button').addEventListener('touchstart', () => {
+    if (backgroundMusic.paused) {
+        backgroundMusic.play().catch(error => {
+            console.error('Failed to play background music:', error);
+        });
+    }
     startStatusButtons(true);
-    backgroundMusic.play();
     update();
 });
 
