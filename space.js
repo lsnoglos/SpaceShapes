@@ -956,22 +956,27 @@ document.getElementById('restart-button').addEventListener('touchstart', () => {
 });
 
 document.getElementById('start-button').addEventListener('click', () => {
-    if (backgroundMusic.paused) {
-        backgroundMusic.play().catch(error => {
-            console.error('Failed to play background music:', error);
+    const promise = backgroundMusic.play();
+    if (promise !== undefined) {
+        promise.then(_ => {
+            startStatusButtons(false);
+            update();
+        }).catch(error => {
+            console.log('Autoplay was prevented.');
         });
     }
-    startStatusButtons(false);
-    update();
 });
+
 document.getElementById('start-button').addEventListener('touchstart', () => {
-    if (backgroundMusic.paused) {
-        backgroundMusic.play().catch(error => {
-            console.error('Failed to play background music:', error);
+    const promise = backgroundMusic.play();
+    if (promise !== undefined) {
+        promise.then(_ => {
+            startStatusButtons(true);
+            update();
+        }).catch(error => {
+            console.log('Autoplay was prevented.');
         });
     }
-    startStatusButtons(true);
-    update();
 });
 
 document.getElementById('up-button').addEventListener('touchstart', () => {
