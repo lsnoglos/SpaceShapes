@@ -967,7 +967,7 @@ document.getElementById('start-button').addEventListener('click', () => {
                 console.log('Autoplay was prevented.');
             });
         }
-    }, 2000);
+    }, 4000);
 });
 
 document.getElementById('start-button').addEventListener('touchstart', () => {
@@ -982,7 +982,7 @@ document.getElementById('start-button').addEventListener('touchstart', () => {
                 console.log('Autoplay was prevented.');
             });
         }
-    }, 2000);
+    }, 4000);
 });
 
 document.getElementById('up-button').addEventListener('touchstart', () => {
