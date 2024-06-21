@@ -11,6 +11,13 @@ const gameOverSound = new Audio('assets/sounds/gameOver.mp3');
 const newBulletSound = new Audio('assets/sounds/newBullet.mp3');
 const backgroundMusic = new Audio('assets/sounds/play.mp3');
 
+const basicShoot = 'assets/sounds/basicShoot.mp3';
+const orangeShoot = 'assets/sounds/orangeShoot.mp3';
+const strongShoot = 'assets/sounds/strongShoot.mp3';
+const laserShoot = 'assets/sounds/laserShoot.mp3';
+const doubleShoot = 'assets/sounds/doubleShoot.mp3';
+const crossShoot = 'assets/sounds/crossShoot.mp3';
+
 enemyExplodeSound.volume = 0.03;
 backgroundMusic.volume = 0.15;
 
@@ -30,7 +37,7 @@ function generador(cantidad, valorInicial, incremento) {
 
 function setDifficulty(difficulty) {
     if (difficulty === "easy") {
-        enemySpawnRates = generador(25, 1, 0.01);
+        enemySpawnRates = generador(25, 0.5, 0.050);
         enemySpeeds = generador(25, 0.01, 0.01);
         spaceshipSpeeds = generador(25, 5, 0.1);
     } else if (difficulty === "medium") {
@@ -57,12 +64,12 @@ let lastShotTime = 0;
 let capturedSpecialWeapons = new Set();
 
 const specialWeapons = [
-    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, level: 1, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀', isDefault: true },
-    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 2, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀' },
-    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 3, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀' },
-    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 4, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀' },
-    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 5, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀', doubleShoot: true },
-    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 6, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, sound: 'assets/sounds/basicShoot.mp3', icon: '🚀', crossShoot: true },
+    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, level: 1, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, sound: basicShoot, icon: '🚀', isDefault: true },
+    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 5, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, sound: orangeShoot, icon: '🚀' },
+    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 4, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, sound: strongShoot, icon: '🚀' },
+    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 3, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, sound: laserShoot, icon: '🚀' },
+    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 2, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, sound: doubleShoot, icon: '🚀', doubleShoot: true },
+    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 1, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, sound: crossShoot, icon: '🚀', crossShoot: true },
 ];
 
 let enemies = [];
@@ -70,7 +77,8 @@ let enemySpeed = enemySpeeds[0];
 let enemySpawnInterval = enemySpawnRates[0];
 
 let specialStar = null;
-const specialStarInterval = (Math.random() * 30) * 1000;
+let showStarIcon = false; 
+const specialStarInterval = (Math.random() * 60) * 1000;
 let lastSpecialStarSpawnTime = 0;
 let BonusPointsByStar = 10;
 let flashTime = 0;
@@ -103,7 +111,7 @@ const spaceship = {
             const bulletHeight = weapon.sizeBullet;
 
             const shootSound = new Audio(weapon.sound);
-            shootSound.volume = 0.15;
+            shootSound.volume = 0.3;
             shootSound.play();
 
             if (weapon.crossShoot) {
@@ -139,7 +147,7 @@ const enemyTypes = [
     { type: 'yellow', hits: 2, draw: drawRotatingEnemy, minLevel: 5, rotationSpeed: 0.15, createCraters: true },
     { type: 'green', hits: 2, draw: drawAsteroid, diagonal: true, minLevel: 6, createCraters: true },
     { type: 'gray', hits: 2, draw: drawZigzagEnemy, zigzag: true, minLevel: 7, zigzagSpeed: 0.2, zigzagHeight: 0.8, createCraters: true },
-    { type: 'red', hits: 3, draw: drawMissile, minLevel: 4, followsSpaceship: true, shootsAtLevel: 8, createCraters: true }
+    { type: 'red', hits: 3, draw: drawMissile, minLevel: 1, followsSpaceship: true, shootsAtLevel: 8, createCraters: true }
 ];
 
 function draw() {
@@ -333,9 +341,11 @@ function updateBullets() {
                         score += enemyTypes.find(type => type.type === enemy.color).hits;
                         updateScoreUI();
                         enemyExplodeSound.currentTime = 0;
+                        enemyExplodeSound.volume = 0.060;
                         enemyExplodeSound.play();
                     } else {
                         enemyImpactSound.currentTime = 0;
+                        enemyImpactSound.volume = 1;
                         enemyImpactSound.play();
                     }
                 }
@@ -761,7 +771,8 @@ function createSpecialStar() {
         colors: ['rgba(255, 0, 0, 1)', 'rgba(0, 255, 0, 1)', 'rgba(0, 0, 255, 1)', 'rgba(255, 255, 0, 1)', 'rgba(0, 255, 255, 1)', 'rgba(255, 0, 255, 1)'],
         colorIndex: 0,
         originalRadius: 10,
-        shrink: false
+        shrink: false,
+        icon: showStarIcon ? null : '☢️'
     };
     setInterval(() => {
         if (specialStar) {
@@ -774,18 +785,24 @@ function createSpecialStar() {
 function drawSpecialStar() {
     if (specialStar) {
         context.save();
-        context.fillStyle = specialStar.colors[specialStar.colorIndex];
         context.shadowColor = specialStar.colors[specialStar.colorIndex];
         context.shadowBlur = 20;
-        context.beginPath();
-        for (let i = 0; i < 5; i++) {
-            context.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.x,
-                -Math.sin((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.y);
-            context.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.x,
-                -Math.sin((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.y);
+        if (specialStar.icon) {
+            context.font = `${specialStar.radius * 2}px Arial`;
+            context.fillStyle = specialStar.colors[specialStar.colorIndex];
+            context.fillText(specialStar.icon, specialStar.x, specialStar.y + specialStar.radius);
+        }else{
+            context.fillStyle = specialStar.colors[specialStar.colorIndex];
+            context.beginPath();
+            for (let i = 0; i < 5; i++) {
+                context.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.x,
+                    -Math.sin((18 + i * 72) / 180 * Math.PI) * specialStar.radius + specialStar.y);
+                context.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.x,
+                    -Math.sin((54 + i * 72) / 180 * Math.PI) * (specialStar.radius / 2) + specialStar.y);
+            }
+            context.closePath();
+            context.fill();
         }
-        context.closePath();
-        context.fill();
         context.restore();
         specialStar.x -= specialStar.speed;
         if (specialStar.x + specialStar.radius < 0) {
@@ -845,6 +862,7 @@ function checkCollisions() {
         collisionBox.y + collisionBox.height > specialWeapon.y) {
 
         newBulletSound.currentTime = 0;
+        newBulletSound.volume = 0.5;
         newBulletSound.play();
 
         spaceship.currentWeapon = specialWeapons.find(weapon => weapon.name === specialWeapon.name);
