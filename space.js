@@ -9,6 +9,8 @@ const enemyExplodeSound = new Audio('assets/sounds/EnemyExploit.mp3');
 const destroyAllEnemiesSound = new Audio('assets/sounds/destroyAllEnemy.mp3');
 const gameOverSound = new Audio('assets/sounds/gameOver.mp3');
 const newBulletSound = new Audio('assets/sounds/newBullet.mp3');
+const lifeSound = new Audio('assets/sounds/up.mp3');
+
 const backgroundMusic = new Audio('assets/sounds/play.mp3');
 
 const basicShoot = 'assets/sounds/basicShoot.mp3';
@@ -18,38 +20,94 @@ const laserShoot = 'assets/sounds/laserShoot.mp3';
 const doubleShoot = 'assets/sounds/doubleShoot.mp3';
 const crossShoot = 'assets/sounds/crossShoot.mp3';
 
+const worlds = [
+    {
+        id: 1,
+        name: 'Capricornio',
+        colorStart: '#3a0b00',
+        colorEnd: '#00210b',
+        enemies: [1],
+        weapons: [1, 2, 3],
+        music: 'assets/sounds/play.mp3'
+    },
+    {
+        id: 2,
+        name: 'Virgo',
+        colorStart: '#26231e',
+        colorEnd: '#c1a68a',
+        enemies: [4],
+        weapons: [4, 5, 6],
+        music: 'assets/sounds/play_2.mp3'
+    },
+    {
+        id: 3,
+        name: 'Leo',
+        colorStart: '#003e55',
+        colorEnd: '#8c4f57',
+        enemies: [7, 8],
+        weapons: [5, 6],
+        music: 'assets/sounds/play_3.mp3'
+    }
+];
+
+const specialWeapons = [
+    { id: 1, name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, sound: basicShoot, icon: '🚀', isDefault: true },
+    { id: 2, name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, sound: orangeShoot, icon: '🚀' },
+    { id: 3, name: 'strong', colorBullet: 'white', sizeBullet: 3.1, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, sound: strongShoot, icon: '🚀' },
+    { id: 4, name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, enemyDamage: 3, impactSize: 1.3, speed: 14, frequency: 100, sound: laserShoot, icon: '🚀' },
+    { id: 5, name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, enemyDamage: 3, impactSize: 1.4, speed: 11, frequency: 150, sound: doubleShoot, icon: '🚀', doubleShoot: true },
+    { id: 6, name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, enemyDamage: 3, impactSize: 1.5, speed: 14, frequency: 200, sound: crossShoot, icon: '🚀', crossShoot: true },
+];
+
+const difficulties = [
+    {
+        difficulty: 'easy',
+        params: [
+            { worldId: 1, difficultProperties: [generador(25, 0.5, 0.050), generador(25, 0.01, 0.01), generador(25, 5, 0.1)] },
+            { worldId: 2, difficultProperties: [generador(25, 1, 0.1), generador(25, 0.1, 0.1), generador(25, 5, 0.2)] }
+        ]
+    },
+    {
+        difficulty: 'medium',
+        params: [
+            { worldId: 1, difficultProperties: [generador(25, 1, 0.1), generador(25, 0.5, 0.1), generador(25, 5, 0.3)] },
+            { worldId: 2, difficultProperties: [generador(25, 1, 0.2), generador(25, 1, 0.2), generador(25, 5, 0.4)] }
+        ]
+    },
+    {
+        difficulty: 'hard',
+        params: [
+            { worldId: 1, difficultProperties: [generador(25, 2, 0.5), generador(25, 1, 0.3), generador(25, 5, 0.4)] },
+            { worldId: 2, difficultProperties: [generador(25, 2, 0.7), generador(25, 1, 0.5), generador(25, 5, 0.5)] }
+        ]
+    }
+];
+
+const enemyTypes = [
+    { id: 1, type: 'red', hits: 1, draw: drawMissile, createCraters: true },
+    { id: 2, type: 'blue', hits: 1, draw: drawMissile, createCraters: true },
+    { id: 3, type: 'white', hits: 1, draw: drawMissile, createCraters: true },
+    { id: 4, type: 'orange', hits: 1, draw: drawCometEnemy, rotationSpeed: 0.08, createCraters: true },
+    { id: 5, type: 'yellow', hits: 2, draw: drawRotatingEnemy, rotationSpeed: 0.15, createCraters: true },
+    { id: 6, type: 'green', hits: 2, draw: drawAsteroid, diagonal: true, createCraters: true },
+    { id: 7, type: 'gray', hits: 2, draw: drawZigzagEnemy, zigzag: true, zigzagSpeed: 0.2, zigzagHeight: 0.8, createCraters: true },
+    { id: 8, type: 'red', hits: 3, draw: drawMissile, followsSpaceship: true, shootsAtLevel: 8, createCraters: true }
+];
+
 enemyExplodeSound.volume = 0.03;
 backgroundMusic.volume = 0.15;
-
 backgroundMusic.loop = true;
+
+let lives = 3;
+const lifeInterval = 5 * 60 * 1000;
+let isGameOver = false;
+let gameOverPlayed = false;
+let gameOverHandled = false;
+let gamePaused = false;
 
 let stars = [];
 let planets = [];
 let enemyBullets = [];
-
-function generador(cantidad, valorInicial, incremento) {
-    let arreglo = [];
-    for (let i = 0; i < cantidad; i++) {
-        arreglo.push(valorInicial + (i * incremento));
-    }
-    return arreglo;
-}
-
-function setDifficulty(difficulty) {
-    if (difficulty === "easy") {
-        enemySpawnRates = generador(25, 0.5, 0.050);
-        enemySpeeds = generador(25, 0.01, 0.01);
-        spaceshipSpeeds = generador(25, 5, 0.1);
-    } else if (difficulty === "medium") {
-        enemySpawnRates = generador(25, 1, 0.1);
-        enemySpeeds = generador(25, 0.5, 0.1);
-        spaceshipSpeeds = generador(25, 5, 0.3);
-    } else if (difficulty === "hard") {
-        enemySpawnRates = generador(25, 2, 0.5);
-        enemySpeeds = generador(25, 1, 0.3);
-        spaceshipSpeeds = generador(25, 5, 0.4);
-    }
-}
 
 let enemySpawnRates = [];
 let enemySpeeds = [];
@@ -63,14 +121,7 @@ let specialWeaponQueue = [];
 let lastShotTime = 0;
 let capturedSpecialWeapons = new Set();
 
-const specialWeapons = [
-    { name: 'Basic shoot', colorBullet: 'white', sizeBullet: 2.8, level: 1, enemyDamage: 1, impactSize: 1, speed: 5, frequency: 250, sound: basicShoot, icon: '🚀', isDefault: true },
-    { name: 'orange shoot', colorBullet: 'white', sizeBullet: 2.8, level: 2, enemyDamage: 2, impactSize: 1.1, speed: 8, frequency: 200, sound: orangeShoot, icon: '🚀' },
-    { name: 'strong', colorBullet: 'white', sizeBullet: 3.1, level: 3, enemyDamage: 3, impactSize: 1.2, speed: 11, frequency: 150, sound: strongShoot, icon: '🚀' },
-    { name: 'Laser', colorBullet: 'white', sizeBullet: 3.4, level: 4, enemyDamage: 4, impactSize: 1.3, speed: 14, frequency: 100, sound: laserShoot, icon: '🚀' },
-    { name: 'double shoot', colorBullet: 'white', sizeBullet: 3.7, level: 5, enemyDamage: 2, impactSize: 1.4, speed: 11, frequency: 150, sound: doubleShoot, icon: '🚀', doubleShoot: true },
-    { name: 'cross shoot', colorBullet: 'white', sizeBullet: 4, level: 6, enemyDamage: 2, impactSize: 1.5, speed: 14, frequency: 200, sound: crossShoot, icon: '🚀', crossShoot: true },
-];
+let currentWorld = worlds[0];
 
 let enemies = [];
 let enemySpeed = enemySpeeds[0];
@@ -83,12 +134,40 @@ let lastSpecialStarSpawnTime = 0;
 let BonusPointsByStar = 10;
 let flashTime = 0;
 
-let isGameOver = false;
 let score = 0;
 let level = 1;
-const pointsPerLevel = 50;
+const pointsPerLevel = 10;
+
+let specialHeart = null;
+const specialHeartInterval = 2 * 60 * 1000;
+let lastSpecialHeartSpawnTime = 0;
+
+let explosions = [];
 
 let isPaused = false;
+
+setInterval(incrementLives, lifeInterval);
+
+function generador(cantidad, valorInicial, incremento) {
+    let arreglo = [];
+    for (let i = 0; i < cantidad; i++) {
+        arreglo.push(valorInicial + (i * incremento));
+    }
+    return arreglo;
+}
+
+function setDifficulty(difficulty) {
+    let world = worlds.find(w => w.id === currentWorld.id);
+    let difficultySetting = difficulties.find(d => d.difficulty === difficulty);
+    if (difficultySetting) {
+        let params = difficultySetting.params.find(p => p.worldId === world.id);
+        if (params) {
+            enemySpawnRates = params.difficultProperties[0];
+            enemySpeeds = params.difficultProperties[1];
+            spaceshipSpeeds = params.difficultProperties[2];
+        }
+    }
+}
 
 const spaceship = {
     x: 50,
@@ -139,19 +218,13 @@ const spaceship = {
     }
 };
 
-const enemyTypes = [
-    { type: 'red', hits: 1, draw: drawMissile, minLevel: 1, createCraters: true },
-    { type: 'blue', hits: 1, draw: drawMissile, minLevel: 2, createCraters: true },
-    { type: 'white', hits: 1, draw: drawMissile, minLevel: 3, createCraters: true },
-    { type: 'orange', hits: 1, draw: drawCometEnemy, minLevel: 4, rotationSpeed: 0.08, createCraters: true },
-    { type: 'yellow', hits: 2, draw: drawRotatingEnemy, minLevel: 5, rotationSpeed: 0.15, createCraters: true },
-    { type: 'green', hits: 2, draw: drawAsteroid, diagonal: true, minLevel: 6, createCraters: true },
-    { type: 'gray', hits: 2, draw: drawZigzagEnemy, zigzag: true, minLevel: 7, zigzagSpeed: 0.2, zigzagHeight: 0.8, createCraters: true },
-    { type: 'red', hits: 3, draw: drawMissile, minLevel: 1, followsSpaceship: true, shootsAtLevel: 8, createCraters: true }
-];
-
 function draw() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, currentWorld.colorStart);
+    gradient.addColorStop(1, currentWorld.colorEnd);
+
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
 
     if (flashTime > 0) {
         context.fillStyle = 'rgba(255, 255, 255, 0.7)';
@@ -167,9 +240,11 @@ function draw() {
     drawEnemyBullets();
     drawSpecialWeapon();
     updateObstacles();
+    drawExplosions();
 
     context.fillStyle = 'white';
 }
+
 
 function drawSpaceship() {
     context.save();
@@ -338,7 +413,7 @@ function updateBullets() {
                         enemy.finalHit = true;
                         enemy.finalHitEffectTimer = 30;
                         enemy.impactSize = bullet.impactSize;
-                        score += enemyTypes.find(type => type.type === enemy.color).hits;
+                        score += enemyTypes.find(type => type.id === enemy.id).hits;
                         updateScoreUI();
                         enemyExplodeSound.currentTime = 0;
                         enemyExplodeSound.volume = 0.060;
@@ -374,11 +449,10 @@ function updateEnemyBullets() {
     });
 }
 
-function createEnemy() {
-    const availableTypes = enemyTypes.filter(type => type.minLevel <= level);
-    const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+function createEnemyFromType(type) {
     const size = 20 + Math.random() * 30;
     return {
+        id: type.id,
         x: canvas.width,
         y: Math.random() * canvas.height,
         width: size,
@@ -477,26 +551,22 @@ function drawEnemies() {
     });
 }
 
-function createSpecialWeapon() {
-    const availableWeapons = specialWeapons.filter(weapon => weapon.level === level && !capturedSpecialWeapons.has(weapon.name) && weapon.name !== spaceship.currentWeapon.name);
-
-    if (availableWeapons.length === 0) return null;
-
-    const weapon = availableWeapons[Math.floor(Math.random() * availableWeapons.length)];
+function createSpecialWeaponFromType(type) {
     return {
+        id: type.id,
         x: canvas.width,
         y: Math.random() * canvas.height,
         width: 30,
         height: 30,
         speed: 2,
-        color: weapon.colorBullet,
-        damage: weapon.enemyDamage,
-        icon: weapon.icon,
-        name: weapon.name,
+        color: type.colorBullet,
+        damage: type.enemyDamage,
+        icon: type.icon,
+        name: type.name,
         rotation: 0,
         rotationSpeed: 0.05,
         originalSize: 28,
-        animationType: 'breathing' //breathing or rotation
+        animationType: 'breathing' // 'breathing' o 'rotation'
     };
 }
 
@@ -535,20 +605,34 @@ function drawSpecialWeapon() {
 
 function generateObstacles() {
     if (Math.random() < enemySpawnInterval / 100) {
-        enemies.push(createEnemy());
+        const enemyIndex = (level - 1) % currentWorld.enemies.length;
+        const enemyId = currentWorld.enemies[enemyIndex];
+        const enemyType = enemyTypes.find(type => type.id === enemyId);
+        if (enemyType) {
+            enemies.push(createEnemyFromType(enemyType));
+        }
     }
+
     if (!specialStar && (Date.now() - lastSpecialStarSpawnTime) > specialStarInterval) {
         createSpecialStar();
         lastSpecialStarSpawnTime = Date.now();
     }
+
     if (!specialWeapon && (Date.now() - lastSpecialWeaponSpawnTime) > specialWeaponInterval) {
-        const currentLevelWeapon = specialWeapons.find(weapon => weapon.level === level && weapon.name !== spaceship.currentWeapon.name);
-        if (currentLevelWeapon && !capturedSpecialWeapons.has(currentLevelWeapon.name)) {
-            specialWeapon = createSpecialWeapon();
+        const weaponIndex = (level - 1) % currentWorld.weapons.length;
+        const weaponId = currentWorld.weapons[weaponIndex];
+        const weaponType = specialWeapons.find(weapon => weapon.id === weaponId);
+        if (weaponType && !capturedSpecialWeapons.has(weaponType.name)) {
+            specialWeapon = createSpecialWeaponFromType(weaponType);
             if (specialWeapon) {
                 lastSpecialWeaponSpawnTime = Date.now();
             }
         }
+    }
+
+    if (!specialHeart && (Date.now() - lastSpecialHeartSpawnTime) > specialHeartInterval) {
+        createSpecialHeart();
+        lastSpecialHeartSpawnTime = Date.now();
     }
 }
 
@@ -556,6 +640,7 @@ function updateObstacles() {
     generateObstacles();
     drawEnemies();
     drawSpecialStar();
+    drawSpecialHeart();
 }
 
 function drawEnemyShape(enemy, points) {
@@ -573,7 +658,6 @@ function drawEnemyShape(enemy, points) {
     }
     context.closePath();
     context.fill();
-
 }
 
 function addCraters(enemy, craterCount = 5) {
@@ -702,7 +786,7 @@ function drawZigzagEnemy(enemy) {
 }
 
 function drawRotatingEnemyShape(enemy) {
-    drawEnemyShape(enemy, 6, true);
+    drawEnemyShape(enemy, 6);
 }
 
 function drawRotatingEnemy(enemy) {
@@ -710,7 +794,7 @@ function drawRotatingEnemy(enemy) {
 }
 
 function drawCometEnemyShape(enemy) {
-    drawEnemyShape(enemy, 16, true);
+    drawEnemyShape(enemy, 16);
 }
 
 function drawCometEnemy(enemy) {
@@ -811,7 +895,59 @@ function drawSpecialStar() {
     }
 }
 
+function createSpecialHeart() {
+    specialHeart = {
+        x: canvas.width,
+        y: Math.random() * canvas.height,
+        radius: 10,
+        speed: 2,
+        color: 'red',
+        icon: '❤️'
+    };
+}
+
+function drawSpecialHeart() {
+    if (specialHeart) {
+        context.save();
+        context.shadowColor = specialHeart.color;
+        context.shadowBlur = 20;
+        context.font = `${specialHeart.radius * 2}px Arial`;
+        context.fillStyle = specialHeart.color;
+        context.fillText(specialHeart.icon, specialHeart.x, specialHeart.y + specialHeart.radius);
+        context.restore();
+        specialHeart.x -= specialHeart.speed;
+        if (specialHeart.x + specialHeart.radius < 0) {
+            specialHeart = null;
+        }
+    }
+}
+
+function createExplosion(x, y, size, color) {
+    explosions.push({ x, y, size, color, life: 10 });
+}
+
+function drawExplosions() {
+    explosions.forEach((explosion, index) => {
+        context.save();
+        context.fillStyle = explosion.color;
+        context.shadowColor = explosion.color;
+        context.shadowBlur = 15;
+        context.globalAlpha = 0.6;
+        context.beginPath();
+        context.arc(explosion.x, explosion.y, explosion.size, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+
+        explosion.life -= 1;
+        if (explosion.life <= 0) {
+            explosions.splice(index, 1);
+        }
+    });
+}
+
 function checkCollisions() {
+    if (gamePaused) return;
+
     const collisionBox = {
         x: spaceship.x,
         y: spaceship.y - 10,
@@ -824,6 +960,7 @@ function checkCollisions() {
             collisionBox.x + collisionBox.width > enemy.x &&
             collisionBox.y < enemy.y + enemy.height &&
             collisionBox.y + collisionBox.height > enemy.y) {
+            createExplosion((enemy.x + spaceship.x) / 2, (enemy.y + spaceship.y) / 2, 20, 'red');
             isGameOver = true;
         }
     });
@@ -833,6 +970,7 @@ function checkCollisions() {
             collisionBox.x + collisionBox.width > bullet.x &&
             collisionBox.y < bullet.y + bullet.height &&
             collisionBox.y + collisionBox.height > bullet.y) {
+            createExplosion((bullet.x + spaceship.x) / 2, (bullet.y + spaceship.y) / 2, 20, 'orange');
             isGameOver = true;
         }
     });
@@ -869,61 +1007,180 @@ function checkCollisions() {
         capturedSpecialWeapons.add(specialWeapon.name);
         specialWeapon = null;
     }
+
+    if (specialHeart &&
+        collisionBox.x < specialHeart.x + specialHeart.radius &&
+        collisionBox.x + collisionBox.width > specialHeart.x &&
+        collisionBox.y < specialHeart.y + specialHeart.radius &&
+        collisionBox.y + collisionBox.height > specialHeart.y) {
+
+        lifeSound.currentTime = 0;
+        lifeSound.volume = 0.5;
+        lifeSound.play();
+
+        lives += 1;
+        updateLivesUI();
+        specialHeart = null;
+    }
+
+    if (isGameOver && !gameOverHandled) {
+        handleGameOver();
+    }
 }
 
 function updateLevel() {
-    level = Math.floor(score / pointsPerLevel) + 1;
+    const levelsPerWorld = currentWorld.enemies.length;
+    const maxScorePerWorld = pointsPerLevel * levelsPerWorld;
+    const currentWorldIndex = worlds.findIndex(world => world.id === currentWorld.id);
 
-    if (level <= enemySpawnRates.length) {
-        enemySpawnInterval = enemySpawnRates[level - 1];
-        enemySpeed = enemySpeeds[level - 1];
-        spaceship.speed = spaceshipSpeeds[level - 1];
-    } else {
-        enemySpawnInterval = enemySpawnRates[enemySpawnRates.length - 1];
-        enemySpeed = enemySpeeds[enemySpeeds.length - 1];
-        spaceship.speed = spaceshipSpeeds[spaceshipSpeeds.length - 1];
+    const currentWorldMaxScore = maxScorePerWorld * (currentWorldIndex + 1);
+    const previousWorldMaxScore = maxScorePerWorld * currentWorldIndex;
+
+    level = Math.floor((score - previousWorldMaxScore) / pointsPerLevel) + 1;
+
+    if (score >= currentWorldMaxScore) {
+        if (currentWorldIndex + 1 < worlds.length) {
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+            backgroundMusic.src = currentWorld.music;
+            backgroundMusic.play();
+            currentWorld = worlds[currentWorldIndex + 1];
+        } else {
+            showCongratulationsScreen();
+            return;
+        }
     }
 
-    updateLevelUI();
-    if (specialWeapon && specialWeapon.level <= level) {
-        specialWeaponQueue.push(specialWeapon);
-        specialWeapon = null;
-    }
+    const enemyIndex = (level - 1) % currentWorld.enemies.length;
+    enemySpawnInterval = enemySpawnRates[enemyIndex];
+    enemySpeed = enemySpeeds[enemyIndex];
+    spaceship.speed = spaceshipSpeeds[enemyIndex];
+
+    updateHeaderUI();
 }
 
 function update() {
-    if (!isGameOver && !isPaused) {
+    if (!isGameOver && !isPaused && !gamePaused) {
         updateSpaceship();
         updateBullets();
         updateEnemyBullets();
         generateObstacles();
         checkCollisions();
         updateLevel();
+    } else if (isGameOver) {
+        cancelAnimationFrame(animationFrameId);
     }
     draw();
 
     if (!isGameOver) {
         animationFrameId = requestAnimationFrame(update);
     } else {
-
-        gameOverSound.currentTime = 0;
-        gameOverSound.play();
-
-        document.getElementById('game-over').classList.remove('hidden');
-        document.getElementById('pause-button').classList.add('hidden');
         cancelAnimationFrame(animationFrameId);
 
-        backgroundMusic.pause();
-        backgroundMusic.currentTime = 0;
+        if (!gameOverHandled) {
+            document.getElementById('game-over').classList.remove('hidden');
+            document.getElementById('pause-button').classList.add('hidden');
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+        }
     }
-}
-
-function updateLevelUI() {
-    document.getElementById('level').innerText = `Level: ${level}`;
 }
 
 function updateScoreUI() {
     document.getElementById('score').innerText = `Score: ${score}`;
+}
+
+function updateHeaderUI() {
+    const header = document.getElementById('header');
+    header.innerText = `${currentWorld.name} - Level ${level}`;
+}
+
+function updateLivesUI() {
+    const livesContainer = document.getElementById('lives');
+    livesContainer.innerHTML = '';
+    for (let i = 0; i < lives; i++) {
+        livesContainer.innerHTML += '❤️';
+    }
+}
+
+function incrementLives() {
+    lives += 1;
+    updateLivesUI();
+}
+
+function showLifeLostDialog() {
+    const lifeLostDialog = document.getElementById('life-lost-dialog');
+    const lifeLostMessage = document.getElementById('life-lost-message');
+    lifeLostMessage.innerHTML = `🚀 x ${lives} ❤️`;
+    lifeLostDialog.classList.remove('hidden');
+
+    setTimeout(() => {
+        lifeLostDialog.classList.add('hidden');
+        resetPlayerPosition();
+        isGameOver = false;
+        gameOverPlayed = false;
+        gameOverHandled = false;
+        gamePaused = false;
+        update();
+    }, 3000);
+}
+
+function handleGameOver() {
+    gameOverHandled = true;
+
+    if (!gameOverPlayed) {
+        gameOverSound.currentTime = 0;
+        gameOverSound.play();
+        gameOverPlayed = true;
+    }
+
+    lives--;
+    updateLivesUI();
+    gamePaused = true;
+
+    if (lives > 0) {
+        setTimeout(() => {
+            showLifeLostDialog();
+        }, 0);
+    } else {
+        setTimeout(() => {
+            const gameOverDialog = document.getElementById('game-over');
+            gameOverDialog.classList.remove('hidden');
+            const restartButton = document.getElementById('restart-button');
+            restartButton.addEventListener('click', () => {
+                gameOverDialog.classList.add('hidden');
+                lives = 3;
+                score = 0;
+                level = 1;
+                currentWorld = worlds[0];
+                backgroundMusic.src = currentWorld.music;
+                backgroundMusic.play();
+                resetGame();
+                update();
+            });
+        }, 0);
+    }
+}
+
+function showCongratulationsScreen() {
+    cancelAnimationFrame(animationFrameId);
+    backgroundMusic.pause();
+
+    document.getElementById('info-container').classList.add('hidden');
+    document.getElementById('pause-button').classList.add('hidden');
+    document.getElementById('congratulations').classList.remove('hidden');
+    document.getElementById('game').classList.add('hidden');
+
+    document.getElementById('restart-game').addEventListener('click', () => {
+        document.getElementById('congratulations').classList.add('hidden');
+        document.getElementById('info-container').classList.remove('hidden');
+        document.getElementById('game').classList.remove('hidden');
+        resetGame();
+        backgroundMusic.play();
+        update();
+    });
+
+    animateStartScreen();
 }
 
 document.getElementById('pause-button').addEventListener('click', () => {
@@ -955,35 +1212,8 @@ document.getElementById('restart-button').addEventListener('touchstart', () => {
     update();
 });
 
-document.getElementById('start-button').addEventListener('click', () => {
-    startStatusButtons(false);
-    update();
-
-    setTimeout(() => {
-        const promise = backgroundMusic.play();
-        if (promise !== undefined) {
-            promise.then(_ => {
-            }).catch(error => {
-                console.log('Autoplay was prevented.');
-            });
-        }
-    }, 4000);
-});
-
-document.getElementById('start-button').addEventListener('touchstart', () => {
-    startStatusButtons(true);
-    update();
-
-    setTimeout(() => {
-        const promise = backgroundMusic.play();
-        if (promise !== undefined) {
-            promise.then(_ => {
-            }).catch(error => {
-                console.log('Autoplay was prevented.');
-            });
-        }
-    }, 4000);
-});
+document.getElementById('start-button').addEventListener('click', () => startGame(false));
+document.getElementById('start-button').addEventListener('touchstart', () => startGame(true));
 
 document.getElementById('up-button').addEventListener('touchstart', () => {
     spaceship.isMovingUp = true;
@@ -1065,6 +1295,29 @@ document.addEventListener('keyup', event => {
     }
 });
 
+function startGame(clickType) {
+    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    setDifficulty(selectedDifficulty);
+
+    backgroundMusic.src = currentWorld.music;
+
+    setTimeout(() => {
+        const promise = backgroundMusic.play();
+        if (promise !== undefined) {
+            promise.then(_ => {
+            }).catch(error => {
+                console.log('Autoplay was prevented.');
+            });
+        }
+    }, 4000);
+
+    updateHeaderUI();
+    updateScoreUI();
+
+    startStatusButtons(clickType);
+    update();
+}
+
 function startStatusButtons(showButtons) {
     const show = showButtons ? 'remove' : 'add';
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
@@ -1089,6 +1342,13 @@ function animateStartScreen() {
     requestAnimationFrame(animateStartScreen);
 }
 
+function resetPlayerPosition() {
+    spaceship.x = 50;
+    spaceship.y = canvas.height / 2;
+    enemies = [];
+    enemyBullets = [];
+}
+
 function resetGame() {
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
     setDifficulty(selectedDifficulty);
@@ -1106,8 +1366,12 @@ function resetGame() {
     flashTime = 0;
 
     isGameOver = false;
+    gameOverPlayed = false;
+    gameOverHandled = false;
+    gamePaused = false;
     score = 0;
     level = 1;
+    currentWorld = worlds[0];
     enemySpeed = enemySpeeds[0];
     enemySpawnInterval = enemySpawnRates[0];
     spaceship.speed = spaceshipSpeeds[0];
@@ -1121,7 +1385,34 @@ function resetGame() {
     document.getElementById('pause-button').classList.remove('hidden');
 
     updateScoreUI();
-    updateLevelUI();
+    updateHeaderUI();
+    updateLivesUI();
+
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.src = currentWorld.music;
+    backgroundMusic.play();
+}
+
+
+function nextWorld() {
+    const currentWorldIndex = worlds.findIndex(world => world.id === currentWorld.id);
+    if (currentWorldIndex + 1 < worlds.length) {
+        currentWorld = worlds[currentWorldIndex + 1];
+        level = 1;
+    } else {
+        showCongratulationsScreen();
+        return;
+    }
+    updateHeaderUI();
+
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.src = currentWorld.music;
+    backgroundMusic.play();
+
+    resetGame();
+    update();
 }
 
 createStars(100);

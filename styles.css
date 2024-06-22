@@ -28,12 +28,14 @@ body {
     padding: 0px;
     background-color: #333;
     color: white;
+    font-size: small;
 }
 
 #info {
     display: flex;
     justify-content: space-between;
-    width: 80%;
+    width: 100%;
+    padding: 0 10px;
 }
 
 #info div {
@@ -48,7 +50,9 @@ body {
     box-shadow: 0px 0px 10px rgba(255, 255, 255, 1);
 }
 
-#pause-message, #game-over {
+#pause-message,
+#game-over,
+#level-complete {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -59,7 +63,8 @@ body {
     background-color: rgba(80, 78, 102, 0.7);
     width: 60%;
     box-shadow: 0px 0px 60px rgba(252, 252, 252, 0.8);
-    text-shadow: 0px 0px 50px rgba(255, 255, 255, 1);}
+    text-shadow: 0px 0px 50px rgba(255, 255, 255, 1);
+}
 
 #start-screen {
     position: absolute;
@@ -127,7 +132,7 @@ canvas {
     bottom: 0px;
     left: 20px;
     display: grid;
-    grid-template-areas: 
+    grid-template-areas:
         "up"
         "left"
         "right"
@@ -188,10 +193,45 @@ button:active {
     background: linear-gradient(to top, #333, #555);
 }
 
-.control-cross button, #shoot-button {
+.control-cross button,
+#shoot-button {
     box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
 }
 
 input[type="radio"] {
     margin-right: 5px;
+}
+
+#life-lost-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* background: rgba(0, 0, 0, 0.8); */
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 24px;
+    z-index: 10;
+}
+
+#life-lost-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#congratulations {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgb(255, 255, 255);
+    text-align: center;
+    font-weight: bold;
+    background-color: rgba(80, 78, 102, 0.7);
+    width: 90%;
+    box-shadow: 0px 0px 60px rgba(252, 252, 252, 0.8);
+    text-shadow: 0px 0px 50px rgba(255, 255, 255, 1);
 }

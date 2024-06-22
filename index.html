@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Shapes</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
         <div id="info-container">
             <div id="info">
+                <div id="header">World 1 - Level 1</div> <!-- Añadido el header -->
                 <div id="score">Score: 0</div>
-                <div id="level">Level: 1</div>
+                <div id="lives">Lives: ❤️❤️❤️</div>
             </div>
             <button id="pause-button" class="control-button hidden">װ</button>
         </div>
@@ -29,6 +32,10 @@
             <button id="shoot-button" class="hidden">✷</button>
         </div>
 
+        <div id="life-lost-dialog" class="hidden">
+            <p id="life-lost-message"></p>
+        </div>
+
         <div id="pause-message" class="hidden">
             <p>Game Paused</p>
             <button id="resume-button">➤</button>
@@ -36,6 +43,15 @@
         <div id="game-over" class="hidden">
             <p>GAME OVER</p>
             <button id="restart-button">↺</button>
+        </div>
+        <div id="level-complete" class="hidden">
+            <p>Level Complete!</p>
+            <button id="next-button">Next Level ➤</button>
+        </div>
+        <div id="congratulations" class="hidden">
+            <h1>¡Felicidades!</h1>
+            <p>Has completado todos los niveles.</p>
+            <button id="restart-game">Volver a empezar</button>
         </div>
         <div id="start-screen">
             <h1>SPACE SHAPES</h1>
@@ -49,4 +65,5 @@
     </div>
     <script src="space.js"></script>
 </body>
+
 </html>
