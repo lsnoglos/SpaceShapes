@@ -26,7 +26,7 @@ const worlds = [
         name: 'Capricornio',
         colorStart: '#3a0b00',
         colorEnd: '#00210b',
-        enemies: [1],
+        enemies: [1, 2, 3],
         weapons: [1, 2, 3],
         music: 'assets/sounds/play.mp3'
     },
@@ -35,7 +35,7 @@ const worlds = [
         name: 'Virgo',
         colorStart: '#26231e',
         colorEnd: '#c1a68a',
-        enemies: [4],
+        enemies: [4, 5, 6],
         weapons: [4, 5, 6],
         music: 'assets/sounds/play_2.mp3'
     },
@@ -129,14 +129,14 @@ let enemySpawnInterval = enemySpawnRates[0];
 
 let specialStar = null;
 let showStarIcon = false;
-const specialStarInterval = (Math.random() * 60) * 1000;
+const specialStarInterval = (Math.random() * 120) * 1000;
 let lastSpecialStarSpawnTime = 0;
 let BonusPointsByStar = 10;
 let flashTime = 0;
 
 let score = 0;
 let level = 1;
-const pointsPerLevel = 10;
+const pointsPerLevel = 50;
 
 let specialHeart = null;
 const specialHeartInterval = 2 * 60 * 1000;
