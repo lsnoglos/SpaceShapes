@@ -12,6 +12,8 @@ const newBulletSound = new Audio('assets/sounds/newBullet.mp3');
 const lifeSound = new Audio('assets/sounds/up.mp3');
 
 const backgroundMusic = new Audio('assets/sounds/play.mp3');
+const winSound = new Audio('assets/sounds/win.mp3');
+const newLevelSound = new Audio('assets/sounds/newLevel.mp3');
 
 const basicShoot = 'assets/sounds/basicShoot.mp3';
 const orangeShoot = 'assets/sounds/orangeShoot.mp3';
@@ -104,6 +106,10 @@ let isGameOver = false;
 let gameOverPlayed = false;
 let gameOverHandled = false;
 let gamePaused = false;
+let isGameWon = false;
+let animationFrameId;
+let isGameRunning = false;
+let intervals = [];
 
 let stars = [];
 let planets = [];
@@ -136,7 +142,7 @@ let flashTime = 0;
 
 let score = 0;
 let level = 1;
-const pointsPerLevel = 50;
+const pointsPerLevel = 11;
 
 let specialHeart = null;
 const specialHeartInterval = 2 * 60 * 1000;
@@ -165,6 +171,10 @@ function setDifficulty(difficulty) {
             enemySpawnRates = params.difficultProperties[0];
             enemySpeeds = params.difficultProperties[1];
             spaceshipSpeeds = params.difficultProperties[2];
+
+            spaceship.speed = spaceshipSpeeds[0];
+            enemySpeed = enemySpeeds[0];
+            enemySpawnInterval = enemySpawnRates[0];
         }
     }
 }
@@ -604,6 +614,8 @@ function drawSpecialWeapon() {
 }
 
 function generateObstacles() {
+    if (isGameOver || gamePaused || !isGameRunning) return;
+
     if (Math.random() < enemySpawnInterval / 100) {
         const enemyIndex = (level - 1) % currentWorld.enemies.length;
         const enemyId = currentWorld.enemies[enemyIndex];
@@ -962,6 +974,7 @@ function checkCollisions() {
             collisionBox.y + collisionBox.height > enemy.y) {
             createExplosion((enemy.x + spaceship.x) / 2, (enemy.y + spaceship.y) / 2, 20, 'red');
             isGameOver = true;
+            stopGame();
         }
     });
 
@@ -972,6 +985,7 @@ function checkCollisions() {
             collisionBox.y + collisionBox.height > bullet.y) {
             createExplosion((bullet.x + spaceship.x) / 2, (bullet.y + spaceship.y) / 2, 20, 'orange');
             isGameOver = true;
+            stopGame();
         }
     });
 
@@ -1029,28 +1043,35 @@ function checkCollisions() {
 }
 
 function updateLevel() {
-    const levelsPerWorld = currentWorld.enemies.length;
-    const maxScorePerWorld = pointsPerLevel * levelsPerWorld;
     const currentWorldIndex = worlds.findIndex(world => world.id === currentWorld.id);
+    const levelsPerWorld = currentWorld.enemies.length;
 
-    const currentWorldMaxScore = maxScorePerWorld * (currentWorldIndex + 1);
-    const previousWorldMaxScore = maxScorePerWorld * currentWorldIndex;
+    let previousWorldMaxScore = 0;
+    for (let i = 0; i < currentWorldIndex; i++) {
+        previousWorldMaxScore += pointsPerLevel * worlds[i].enemies.length;
+    }
 
-    level = Math.floor((score - previousWorldMaxScore) / pointsPerLevel) + 1;
+    let newLevel = Math.floor((score - previousWorldMaxScore) / pointsPerLevel) + 1;
 
-    if (score >= currentWorldMaxScore) {
+    if (newLevel > levelsPerWorld) {
         if (currentWorldIndex + 1 < worlds.length) {
+            currentWorld = worlds[currentWorldIndex + 1];
+            newLevel = 1;
+
             backgroundMusic.pause();
             backgroundMusic.currentTime = 0;
             backgroundMusic.src = currentWorld.music;
             backgroundMusic.play();
-            currentWorld = worlds[currentWorldIndex + 1];
+
+            newLevelSound.currentTime = 0;
+            newLevelSound.play();
         } else {
             showCongratulationsScreen();
             return;
         }
     }
 
+    level = newLevel;
     const enemyIndex = (level - 1) % currentWorld.enemies.length;
     enemySpawnInterval = enemySpawnRates[enemyIndex];
     enemySpeed = enemySpeeds[enemyIndex];
@@ -1060,28 +1081,19 @@ function updateLevel() {
 }
 
 function update() {
-    if (!isGameOver && !isPaused && !gamePaused) {
-        updateSpaceship();
-        updateBullets();
-        updateEnemyBullets();
-        generateObstacles();
-        checkCollisions();
-        updateLevel();
-    } else if (isGameOver) {
-        cancelAnimationFrame(animationFrameId);
-    }
-    draw();
+    if (isGameRunning) {
+        if (!isGameOver && !isPaused && !gamePaused && !isGameWon) {
+            updateSpaceship();
+            updateBullets();
+            updateEnemyBullets();
+            generateObstacles();
+            checkCollisions();
+            updateLevel();
+        }
+        draw();
 
-    if (!isGameOver) {
-        animationFrameId = requestAnimationFrame(update);
-    } else {
-        cancelAnimationFrame(animationFrameId);
-
-        if (!gameOverHandled) {
-            document.getElementById('game-over').classList.remove('hidden');
-            document.getElementById('pause-button').classList.add('hidden');
-            backgroundMusic.pause();
-            backgroundMusic.currentTime = 0;
+        if (isGameRunning) {
+            animationFrameId = requestAnimationFrame(update);
         }
     }
 }
@@ -1121,9 +1133,16 @@ function showLifeLostDialog() {
         gameOverPlayed = false;
         gameOverHandled = false;
         gamePaused = false;
+        isGameRunning = true;
+        
+        if (backgroundMusic.paused) {
+            backgroundMusic.play();
+        }
+        
         update();
     }, 3000);
 }
+
 
 function handleGameOver() {
     gameOverHandled = true;
@@ -1138,162 +1157,169 @@ function handleGameOver() {
     updateLivesUI();
     gamePaused = true;
 
+    enemies = [];
+    enemyBullets = [];
+
     if (lives > 0) {
         setTimeout(() => {
             showLifeLostDialog();
         }, 0);
     } else {
+        backgroundMusic.pause();
         setTimeout(() => {
             const gameOverDialog = document.getElementById('game-over');
             gameOverDialog.classList.remove('hidden');
-            const restartButton = document.getElementById('restart-button');
-            restartButton.addEventListener('click', () => {
-                gameOverDialog.classList.add('hidden');
-                lives = 3;
-                score = 0;
-                level = 1;
-                currentWorld = worlds[0];
-                backgroundMusic.src = currentWorld.music;
-                backgroundMusic.play();
-                resetGame();
-                update();
-            });
+            document.getElementById('pause-button').classList.add('hidden');
+            document.getElementById('restart-button').removeEventListener('click', handleRestartClick);
+            document.getElementById('restart-button').addEventListener('click', handleRestartClick);
         }, 0);
     }
 }
 
+function handleRestartClick() {
+    const gameOverDialog = document.getElementById('game-over');
+    document.getElementById('congratulations').classList.add('hidden');
+    document.getElementById('info-container').classList.remove('hidden');
+    document.getElementById('game').classList.remove('hidden');
+    gameOverDialog.classList.add('hidden');
+    document.getElementById('pause-button').classList.remove('hidden');
+    resetGame();
+}
+
 function showCongratulationsScreen() {
-    cancelAnimationFrame(animationFrameId);
-    backgroundMusic.pause();
+    isGameWon = true;
+    stopGame();
+
+    winSound.currentTime = 0;
+    winSound.play();
 
     document.getElementById('info-container').classList.add('hidden');
     document.getElementById('pause-button').classList.add('hidden');
+    document.getElementById('game-over').classList.add('hidden');
+
     document.getElementById('congratulations').classList.remove('hidden');
     document.getElementById('game').classList.add('hidden');
 
-    document.getElementById('restart-game').addEventListener('click', () => {
-        document.getElementById('congratulations').classList.add('hidden');
-        document.getElementById('info-container').classList.remove('hidden');
-        document.getElementById('game').classList.remove('hidden');
-        resetGame();
-        backgroundMusic.play();
-        update();
-    });
+    document.getElementById('restart-game').removeEventListener('click', handleRestartClick); 
+    document.getElementById('restart-game').addEventListener('click', handleRestartClick);
 
     animateStartScreen();
 }
 
-document.getElementById('pause-button').addEventListener('click', () => {
-    isPaused = !isPaused;
-    document.getElementById('pause-message').classList.toggle('hidden', !isPaused);
-    document.getElementById('pause-button').classList.toggle('hidden', isPaused);
-    if (isPaused) {
-        cancelAnimationFrame(animationFrameId);
-    } else {
+function stopGame() {
+    isGameRunning = false;
+    cancelAnimationFrame(animationFrameId);
+    backgroundMusic.pause();
+    clearAllIntervals();
+}
+
+function initializeEventListeners() {
+    document.getElementById('pause-button').addEventListener('click', () => {
+        isPaused = !isPaused;
+        document.getElementById('pause-message').classList.toggle('hidden', !isPaused);
+        document.getElementById('pause-button').classList.toggle('hidden', isPaused);
+        if (isPaused) {
+            cancelAnimationFrame(animationFrameId);
+        } else {
+            update();
+        }
+    });
+
+    document.getElementById('resume-button').addEventListener('click', () => {
+        isPaused = false;
+        document.getElementById('pause-message').classList.add('hidden');
+        document.getElementById('pause-button').classList.remove('hidden');
         update();
-    }
-});
+    });
 
-document.getElementById('resume-button').addEventListener('click', () => {
-    isPaused = false;
-    document.getElementById('pause-message').classList.add('hidden');
-    document.getElementById('pause-button').classList.remove('hidden');
-    update();
-});
+    document.getElementById('restart-button').addEventListener('click', handleRestartClick);
+    document.getElementById('restart-button').addEventListener('touchstart', handleRestartClick);
 
-document.getElementById('restart-button').addEventListener('click', () => {
-    resetGame();
-    backgroundMusic.play();
-    update();
-});
-document.getElementById('restart-button').addEventListener('touchstart', () => {
-    resetGame();
-    backgroundMusic.play();
-    update();
-});
+    document.getElementById('start-button').addEventListener('click', () => startGame(false));
+    document.getElementById('start-button').addEventListener('touchstart', () => startGame(true));
 
-document.getElementById('start-button').addEventListener('click', () => startGame(false));
-document.getElementById('start-button').addEventListener('touchstart', () => startGame(true));
-
-document.getElementById('up-button').addEventListener('touchstart', () => {
-    spaceship.isMovingUp = true;
-});
-document.getElementById('up-button').addEventListener('touchend', () => {
-    spaceship.isMovingUp = false;
-});
-
-document.getElementById('down-button').addEventListener('touchstart', () => {
-    spaceship.isMovingDown = true;
-});
-document.getElementById('down-button').addEventListener('touchend', () => {
-    spaceship.isMovingDown = false;
-});
-
-document.getElementById('left-button').addEventListener('touchstart', () => {
-    spaceship.isMovingLeft = true;
-});
-document.getElementById('left-button').addEventListener('touchend', () => {
-    spaceship.isMovingLeft = false;
-});
-
-document.getElementById('right-button').addEventListener('touchstart', () => {
-    spaceship.isMovingRight = true;
-});
-document.getElementById('right-button').addEventListener('touchend', () => {
-    spaceship.isMovingRight = false;
-});
-
-document.getElementById('shoot-button').addEventListener('touchstart', () => {
-    spaceship.shoot();
-    if (!shootingInterval) {
-        shootingInterval = setInterval(() => spaceship.shoot(), spaceship.currentWeapon.frequency);
-    }
-});
-
-document.getElementById('shoot-button').addEventListener('touchend', () => {
-    clearInterval(shootingInterval);
-    shootingInterval = null;
-});
-
-document.addEventListener('keydown', event => {
-    if (event.code === 'ArrowUp') {
+    document.getElementById('up-button').addEventListener('touchstart', () => {
         spaceship.isMovingUp = true;
-    }
-    if (event.code === 'ArrowDown') {
+    });
+    document.getElementById('up-button').addEventListener('touchend', () => {
+        spaceship.isMovingUp = false;
+    });
+
+    document.getElementById('down-button').addEventListener('touchstart', () => {
         spaceship.isMovingDown = true;
-    }
-    if (event.code === 'ArrowLeft') {
+    });
+    document.getElementById('down-button').addEventListener('touchend', () => {
+        spaceship.isMovingDown = false;
+    });
+
+    document.getElementById('left-button').addEventListener('touchstart', () => {
         spaceship.isMovingLeft = true;
-    }
-    if (event.code === 'ArrowRight') {
+    });
+    document.getElementById('left-button').addEventListener('touchend', () => {
+        spaceship.isMovingLeft = false;
+    });
+
+    document.getElementById('right-button').addEventListener('touchstart', () => {
         spaceship.isMovingRight = true;
-    }
-    if (event.code === 'Space') {
+    });
+    document.getElementById('right-button').addEventListener('touchend', () => {
+        spaceship.isMovingRight = false;
+    });
+
+    document.getElementById('shoot-button').addEventListener('touchstart', () => {
         spaceship.shoot();
         if (!shootingInterval) {
             shootingInterval = setInterval(() => spaceship.shoot(), spaceship.currentWeapon.frequency);
+            intervals.push(shootingInterval);
         }
-    }
-});
+    });
 
-document.addEventListener('keyup', event => {
-    if (event.code === 'ArrowUp') {
-        spaceship.isMovingUp = false;
-    }
-    if (event.code === 'ArrowDown') {
-        spaceship.isMovingDown = false;
-    }
-    if (event.code === 'ArrowLeft') {
-        spaceship.isMovingLeft = false;
-    }
-    if (event.code === 'ArrowRight') {
-        spaceship.isMovingRight = false;
-    }
-    if (event.code === 'Space') {
+    document.getElementById('shoot-button').addEventListener('touchend', () => {
         clearInterval(shootingInterval);
         shootingInterval = null;
-    }
-});
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.code === 'ArrowUp') {
+            spaceship.isMovingUp = true;
+        }
+        if (event.code === 'ArrowDown') {
+            spaceship.isMovingDown = true;
+        }
+        if (event.code === 'ArrowLeft') {
+            spaceship.isMovingLeft = true;
+        }
+        if (event.code === 'ArrowRight') {
+            spaceship.isMovingRight = true;
+        }
+        if (event.code === 'Space') {
+            spaceship.shoot();
+            if (!shootingInterval) {
+                shootingInterval = setInterval(() => spaceship.shoot(), spaceship.currentWeapon.frequency);
+                intervals.push(shootingInterval);
+            }
+        }
+    });
+
+    document.addEventListener('keyup', event => {
+        if (event.code === 'ArrowUp') {
+            spaceship.isMovingUp = false;
+        }
+        if (event.code === 'ArrowDown') {
+            spaceship.isMovingDown = false;
+        }
+        if (event.code === 'ArrowLeft') {
+            spaceship.isMovingLeft = false;
+        }
+        if (event.code === 'ArrowRight') {
+            spaceship.isMovingRight = false;
+        }
+        if (event.code === 'Space') {
+            clearInterval(shootingInterval);
+            shootingInterval = null;
+        }
+    });
+}
 
 function startGame(clickType) {
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
@@ -1315,7 +1341,9 @@ function startGame(clickType) {
     updateScoreUI();
 
     startStatusButtons(clickType);
-    update();
+
+    isGameRunning = true;
+    animationFrameId = requestAnimationFrame(update);
 }
 
 function startStatusButtons(showButtons) {
@@ -1350,10 +1378,11 @@ function resetPlayerPosition() {
 }
 
 function resetGame() {
+    stopGame();
+
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
     setDifficulty(selectedDifficulty);
 
-    shootingInterval = null;
     specialWeapon = null;
     lastSpecialWeaponSpawnTime = 0;
     specialWeaponQueue = [];
@@ -1369,37 +1398,46 @@ function resetGame() {
     gameOverPlayed = false;
     gameOverHandled = false;
     gamePaused = false;
+    isGameWon = false;
     score = 0;
     level = 1;
     currentWorld = worlds[0];
+
+    spaceship.x = 50;
+    spaceship.y = canvas.height / 2;
+    spaceship.bullets = [];
+    enemies = [];
+    enemyBullets = [];
+    lives = 3;
+
     enemySpeed = enemySpeeds[0];
     enemySpawnInterval = enemySpawnRates[0];
     spaceship.speed = spaceshipSpeeds[0];
     spaceship.currentWeapon = specialWeapons.find(weapon => weapon.isDefault);
-    enemies = [];
-    spaceship.bullets = [];
-    enemyBullets = [];
-    clearInterval(shootingInterval);
-    shootingInterval = null;
-    document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('pause-button').classList.remove('hidden');
 
     updateScoreUI();
     updateHeaderUI();
     updateLivesUI();
 
-    backgroundMusic.pause();
     backgroundMusic.currentTime = 0;
     backgroundMusic.src = currentWorld.music;
     backgroundMusic.play();
-}
 
+    intervals.push(setInterval(incrementLives, lifeInterval));
+
+    isGameRunning = true;
+    update();
+}
 
 function nextWorld() {
     const currentWorldIndex = worlds.findIndex(world => world.id === currentWorld.id);
     if (currentWorldIndex + 1 < worlds.length) {
         currentWorld = worlds[currentWorldIndex + 1];
         level = 1;
+        
+        const newLevelSound = new Audio('assets/sounds/newLevel.mp3');
+        newLevelSound.currentTime = 0;
+        newLevelSound.play();
     } else {
         showCongratulationsScreen();
         return;
@@ -1414,6 +1452,15 @@ function nextWorld() {
     resetGame();
     update();
 }
+
+function clearAllIntervals() {
+    for (const interval of intervals) {
+        clearInterval(interval);
+    }
+    intervals = [];
+}
+
+initializeEventListeners();
 
 createStars(100);
 createPlanets(5);
