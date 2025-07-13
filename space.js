@@ -152,8 +152,6 @@ let explosions = [];
 
 let isPaused = false;
 
-setInterval(incrementLives, lifeInterval);
-
 function generador(cantidad, valorInicial, incremento) {
     let arreglo = [];
     for (let i = 0; i < cantidad; i++) {
@@ -1341,6 +1339,8 @@ function startGame(clickType) {
     updateScoreUI();
 
     startStatusButtons(clickType);
+
+    intervals.push(setInterval(incrementLives, lifeInterval));
 
     isGameRunning = true;
     animationFrameId = requestAnimationFrame(update);
