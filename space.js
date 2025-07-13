@@ -5,7 +5,7 @@ canvas.height = 750;
 
 const enemyShootSound = new Audio('assets/sounds/EnemyShooting.mp3');
 const enemyImpactSound = new Audio('assets/sounds/EnemyImpact.mp3');
-const enemyExplodeSound = new Audio('assets/sounds/EnemyExploit.mp3');
+const enemyExplodeSound = new Audio('assets/sounds/EnemyExplode.mp3');
 const destroyAllEnemiesSound = new Audio('assets/sounds/destroyAllEnemy.mp3');
 const gameOverSound = new Audio('assets/sounds/gameOver.mp3');
 const newBulletSound = new Audio('assets/sounds/newBullet.mp3');
@@ -150,6 +150,8 @@ let lastSpecialHeartSpawnTime = 0;
 
 let explosions = [];
 
+let scorePopups = [];
+
 let isPaused = false;
 
 function generador(cantidad, valorInicial, incremento) {
@@ -249,6 +251,7 @@ function draw() {
     drawSpecialWeapon();
     updateObstacles();
     drawExplosions();
+    drawScorePopups();
 
     context.fillStyle = 'white';
 }
@@ -421,8 +424,10 @@ function updateBullets() {
                         enemy.finalHit = true;
                         enemy.finalHitEffectTimer = 30;
                         enemy.impactSize = bullet.impactSize;
-                        score += enemyTypes.find(type => type.id === enemy.id).hits;
+                        const points = enemyTypes.find(type => type.id === enemy.id).hits;
+                        score += points;
                         updateScoreUI();
+                        createScorePopup(enemy.x, enemy.y, `+${points}`);
                         enemyExplodeSound.currentTime = 0;
                         enemyExplodeSound.volume = 0.060;
                         enemyExplodeSound.play();
@@ -491,19 +496,24 @@ function createEnemyFromType(type) {
 function drawEnemies() {
     enemies.forEach((enemy, index) => {
         if (enemy.shrink) {
-            enemy.width *= 0.9;
-            enemy.height *= 0.9;
+            enemy.width *= 0.97;
+            enemy.height *= 0.97;
+            enemy.y += enemy.fallSpeed || 1;
+            enemy.x += enemy.fallSide || 0;
+            enemy.rotation = (enemy.rotation || 0) + (enemy.rotationSpeedFall || 0.05);
+            context.save();
+            context.translate(enemy.x, enemy.y);
+            context.rotate(enemy.rotation);
             context.globalAlpha = Math.max(0, 1 - enemy.shrinkStep);
             context.fillStyle = enemy.color;
             context.shadowColor = 'rgba(255, 255, 255, 1)';
-            context.shadowBlur = Math.min(40, enemy.shrinkStep * 80); // light effect
+            context.shadowBlur = Math.min(40, enemy.shrinkStep * 80);
             context.beginPath();
-            context.arc(enemy.x, enemy.y, Math.max(0, enemy.width / 2), 0, Math.PI * 2);
+            context.arc(0, 0, Math.max(0, enemy.width / 2), 0, Math.PI * 2);
             context.fill();
-            context.globalAlpha = 1;
-            context.shadowBlur = 0;
+            context.restore();
             enemy.shrinkStep += 0.05;
-            if (enemy.shrinkStep >= 1) {
+            if (enemy.shrinkStep >= 1 || enemy.y - enemy.height > canvas.height) {
                 enemies.splice(index, 1);
             }
         } else if (enemy.finalHit) {
@@ -518,6 +528,9 @@ function drawEnemies() {
             enemy.finalHitEffectTimer -= 20;
             if (enemy.finalHitEffectTimer <= 0) {
                 enemy.shrink = true;
+                enemy.fallSpeed = 1 + Math.random();
+                enemy.fallSide = (Math.random() - 0.5) * 0.5;
+                enemy.rotationSpeedFall = 0.05 + Math.random() * 0.05;
             }
         } else {
             context.save();
@@ -552,8 +565,6 @@ function drawEnemies() {
             }
             if (enemy.x + enemy.width < 0) {
                 enemies.splice(index, 1);
-                score += 1;
-                updateScoreUI();
             }
         }
     });
@@ -934,6 +945,26 @@ function drawSpecialHeart() {
 
 function createExplosion(x, y, size, color) {
     explosions.push({ x, y, size, color, life: 10 });
+}
+
+function createScorePopup(x, y, text) {
+    scorePopups.push({ x, y, text, alpha: 1 });
+}
+
+function drawScorePopups() {
+    scorePopups.forEach((popup, index) => {
+        context.save();
+        context.fillStyle = 'yellow';
+        context.font = '18px Arial';
+        context.globalAlpha = popup.alpha;
+        context.fillText(popup.text, popup.x, popup.y);
+        context.restore();
+        popup.y -= 0.5;
+        popup.alpha -= 0.02;
+        if (popup.alpha <= 0) {
+            scorePopups.splice(index, 1);
+        }
+    });
 }
 
 function drawExplosions() {
