@@ -21,6 +21,7 @@ const strongShoot = 'assets/sounds/strongShoot.mp3';
 const laserShoot = 'assets/sounds/laserShoot.mp3';
 const doubleShoot = 'assets/sounds/doubleShoot.mp3';
 const crossShoot = 'assets/sounds/crossShoot.mp3';
+const giantEyeMusic = 'assets/sounds/horror.mp3';
 
 const worlds = [
     {
@@ -49,6 +50,33 @@ const worlds = [
         enemies: [7, 8],
         weapons: [5, 6],
         music: 'assets/sounds/play_3.mp3'
+    },
+    {
+        id: 4,
+        name: 'Jupiter',
+        colorStart: '#1b2745',
+        colorEnd: '#553311',
+        enemies: [9],
+        weapons: [5, 6],
+        music: 'assets/sounds/play.mp3'
+    },
+    {
+        id: 5,
+        name: 'Saturno',
+        colorStart: '#44331b',
+        colorEnd: '#111733',
+        enemies: [10],
+        weapons: [5, 6],
+        music: 'assets/sounds/play_2.mp3'
+    },
+    {
+        id: 6,
+        name: 'Neptuno',
+        colorStart: '#102840',
+        colorEnd: '#102050',
+        enemies: [11],
+        weapons: [5, 6],
+        music: 'assets/sounds/play_3.mp3'
     }
 ];
 
@@ -66,21 +94,33 @@ const difficulties = [
         difficulty: 'easy',
         params: [
             { worldId: 1, difficultProperties: [generador(25, 0.5, 0.050), generador(25, 0.01, 0.01), generador(25, 5, 0.1)] },
-            { worldId: 2, difficultProperties: [generador(25, 1, 0.1), generador(25, 0.1, 0.1), generador(25, 5, 0.2)] }
+            { worldId: 2, difficultProperties: [generador(25, 1, 0.1), generador(25, 0.1, 0.1), generador(25, 5, 0.2)] },
+            { worldId: 3, difficultProperties: [generador(25, 1.5, 0.1), generador(25, 0.2, 0.1), generador(25, 5, 0.3)] },
+            { worldId: 4, difficultProperties: [generador(25, 2, 0.1), generador(25, 0.3, 0.1), generador(25, 5, 0.4)] },
+            { worldId: 5, difficultProperties: [generador(25, 2.5, 0.1), generador(25, 0.4, 0.1), generador(25, 5, 0.5)] },
+            { worldId: 6, difficultProperties: [generador(25, 3, 0.1), generador(25, 0.5, 0.1), generador(25, 5, 0.6)] }
         ]
     },
     {
         difficulty: 'medium',
         params: [
             { worldId: 1, difficultProperties: [generador(25, 1, 0.1), generador(25, 0.5, 0.1), generador(25, 5, 0.3)] },
-            { worldId: 2, difficultProperties: [generador(25, 1, 0.2), generador(25, 1, 0.2), generador(25, 5, 0.4)] }
+            { worldId: 2, difficultProperties: [generador(25, 1, 0.2), generador(25, 1, 0.2), generador(25, 5, 0.4)] },
+            { worldId: 3, difficultProperties: [generador(25, 1.5, 0.2), generador(25, 1.2, 0.2), generador(25, 5, 0.5)] },
+            { worldId: 4, difficultProperties: [generador(25, 2, 0.2), generador(25, 1.4, 0.2), generador(25, 5, 0.6)] },
+            { worldId: 5, difficultProperties: [generador(25, 2.5, 0.2), generador(25, 1.6, 0.2), generador(25, 5, 0.7)] },
+            { worldId: 6, difficultProperties: [generador(25, 3, 0.2), generador(25, 1.8, 0.2), generador(25, 5, 0.8)] }
         ]
     },
     {
         difficulty: 'hard',
         params: [
             { worldId: 1, difficultProperties: [generador(25, 2, 0.5), generador(25, 1, 0.3), generador(25, 5, 0.4)] },
-            { worldId: 2, difficultProperties: [generador(25, 2, 0.7), generador(25, 1, 0.5), generador(25, 5, 0.5)] }
+            { worldId: 2, difficultProperties: [generador(25, 2, 0.7), generador(25, 1, 0.5), generador(25, 5, 0.5)] },
+            { worldId: 3, difficultProperties: [generador(25, 2.5, 0.5), generador(25, 1.5, 0.4), generador(25, 5, 0.6)] },
+            { worldId: 4, difficultProperties: [generador(25, 3, 0.5), generador(25, 2, 0.4), generador(25, 5, 0.7)] },
+            { worldId: 5, difficultProperties: [generador(25, 3.5, 0.5), generador(25, 2.5, 0.4), generador(25, 5, 0.8)] },
+            { worldId: 6, difficultProperties: [generador(25, 4, 0.5), generador(25, 3, 0.4), generador(25, 5, 0.9)] }
         ]
     }
 ];
@@ -93,7 +133,10 @@ const enemyTypes = [
     { id: 5, type: 'yellow', hits: 2, draw: drawRotatingEnemy, rotationSpeed: 0.15, createCraters: true },
     { id: 6, type: 'green', hits: 2, draw: drawAsteroid, diagonal: true, createCraters: true },
     { id: 7, type: 'gray', hits: 2, draw: drawZigzagEnemy, zigzag: true, zigzagSpeed: 0.2, zigzagHeight: 0.8, createCraters: true },
-    { id: 8, type: 'red', hits: 3, draw: drawMissile, followsSpaceship: true, shootsAtLevel: 8, createCraters: true }
+    { id: 8, type: 'red', hits: 3, draw: drawMissile, followsSpaceship: true, shootsAtLevel: 8, createCraters: true },
+    { id: 9, type: 'purple', hits: 3, draw: drawOctopusEnemy, arms: 6, shootInterval: 2000 },
+    { id: 10, type: 'black', hits: 4, draw: drawBlackHoleEnemy, blackhole: true },
+    { id: 11, type: 'cyan', hits: 2, draw: drawPhantomEnemy, blinkInterval: 60 }
 ];
 
 enemyExplodeSound.volume = 0.03;
@@ -169,6 +212,7 @@ const bigEnemies = [
 let giantEye = null;
 let bossFight = false;
 let giantEyeDefeated = false;
+let giantEyeFragments = [];
 
 let isPaused = false;
 
@@ -267,6 +311,7 @@ function draw() {
     drawBullets();
     drawEnemies();
     drawGiantEye();
+    updateGiantEyeFragments();
     drawEnemyBullets();
     drawSpecialWeapon();
     updateObstacles();
@@ -436,29 +481,57 @@ function updateBullets() {
                 bullet.x + bullet.width > enemy.x &&
                 bullet.y < enemy.y + enemy.height &&
                 bullet.y + bullet.height > enemy.y) {
-                while (bullet.damage > 0 && enemy.hits > 0) {
-                    enemy.hits--;
-                    bullet.damage--;
-                    enemy.hitEffectTimer = enemy.hitEffectDuration;
-                    if (enemy.hits === 0) {
-                        enemy.finalHit = true;
-                        enemy.finalHitEffectTimer = 30;
-                        enemy.impactSize = bullet.impactSize;
-                        const points = enemyTypes.find(type => type.id === enemy.id).hits;
-                        score += points;
-                        updateScoreUI();
-                        createScorePopup(enemy.x, enemy.y, `+${points}`);
-                        enemyExplodeSound.currentTime = 0;
-                        enemyExplodeSound.volume = 0.060;
-                        enemyExplodeSound.play();
+                if (enemy.blackhole) {
+                    const cx = enemy.x + enemy.width / 2;
+                    const cy = enemy.y + enemy.height / 2;
+                    const dist = Math.hypot(bullet.x - cx, bullet.y - cy);
+                    if (dist < enemy.width * 0.25) {
+                        enemy.hits--;
+                        bullet.damage--;
+                        if (enemy.hits <= 0) {
+                            enemy.finalHit = true;
+                            enemy.finalHitEffectTimer = 30;
+                        }
+                        if (bullet.damage <= 0) {
+                            spaceship.bullets.splice(bulletIndex, 1);
+                        }
                     } else {
-                        enemyImpactSound.currentTime = 0;
-                        enemyImpactSound.volume = 1;
-                        enemyImpactSound.play();
+                        enemyBullets.push({
+                            x: bullet.x,
+                            y: bullet.y,
+                            width: bullet.width,
+                            height: bullet.height,
+                            color: bullet.color,
+                            vx: -bullet.vx,
+                            vy: -bullet.vy
+                        });
+                        spaceship.bullets.splice(bulletIndex, 1);
                     }
-                }
-                if (bullet.damage <= 0) {
-                    spaceship.bullets.splice(bulletIndex, 1);
+                } else {
+                    while (bullet.damage > 0 && enemy.hits > 0) {
+                        enemy.hits--;
+                        bullet.damage--;
+                        enemy.hitEffectTimer = enemy.hitEffectDuration;
+                        if (enemy.hits === 0) {
+                            enemy.finalHit = true;
+                            enemy.finalHitEffectTimer = 30;
+                            enemy.impactSize = bullet.impactSize;
+                            const points = enemyTypes.find(type => type.id === enemy.id).hits;
+                            score += points;
+                            updateScoreUI();
+                            createScorePopup(enemy.x, enemy.y, `+${points}`);
+                            enemyExplodeSound.currentTime = 0;
+                            enemyExplodeSound.volume = 0.060;
+                            enemyExplodeSound.play();
+                        } else {
+                            enemyImpactSound.currentTime = 0;
+                            enemyImpactSound.volume = 1;
+                            enemyImpactSound.play();
+                        }
+                    }
+                    if (bullet.damage <= 0) {
+                        spaceship.bullets.splice(bulletIndex, 1);
+                    }
                 }
             }
         });
@@ -492,6 +565,8 @@ function updateBullets() {
 
                     if (giantEye.health <= 0) {
                         giantEye.state = 'dying';
+                        createGiantEyeFragments();
+                        gamePaused = true;
                     }
 
                     bullet.damage--;
@@ -549,6 +624,12 @@ function createEnemyFromType(type) {
         hitEffectTimer: 0,
         finalHit: false,
         finalHitEffectTimer: 0,
+        arms: type.arms,
+        shootInterval: type.shootInterval,
+        blackhole: type.blackhole || false,
+        blinkInterval: type.blinkInterval || 0,
+        blinkCounter: 0,
+        visible: true,
     };
 }
 
@@ -582,7 +663,16 @@ function drawEnemies() {
             context.globalAlpha = 1;
             enemy.width *= enemy.impactSize;
             enemy.height *= enemy.impactSize;
-            enemy.draw(enemy);
+            if (enemy.blinkInterval) {
+                enemy.blinkCounter++;
+                if (enemy.blinkCounter >= enemy.blinkInterval) {
+                    enemy.blinkCounter = 0;
+                    enemy.visible = !enemy.visible;
+                }
+            }
+            if (enemy.visible) {
+                enemy.draw(enemy);
+            }
             context.restore();
             enemy.finalHitEffectTimer -= 20;
             if (enemy.finalHitEffectTimer <= 0) {
@@ -883,6 +973,64 @@ function drawCometEnemy(enemy) {
     drawRotatingShape(enemy, drawCometEnemyShape);
 }
 
+function drawOctopusEnemy(enemy) {
+    const arms = enemy.arms || 4;
+    context.save();
+    context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+    context.fillStyle = 'purple';
+    context.beginPath();
+    context.arc(0, 0, enemy.width / 3, 0, Math.PI * 2);
+    context.fill();
+    for (let i = 0; i < arms; i++) {
+        const angle = (performance.now() / 500) + (i / arms) * Math.PI * 2;
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(Math.cos(angle) * enemy.width / 2, Math.sin(angle) * enemy.height / 2);
+        context.strokeStyle = 'purple';
+        context.stroke();
+
+        if (!enemy.lastShotTime) enemy.lastShotTime = Date.now();
+        if (Date.now() - enemy.lastShotTime > (enemy.shootInterval || 2000)) {
+            enemy.lastShotTime = Date.now();
+            enemyBullets.push({
+                x: enemy.x + enemy.width / 2,
+                y: enemy.y + enemy.height / 2,
+                width: 6,
+                height: 6,
+                color: 'purple',
+                vx: Math.cos(angle) * 3,
+                vy: Math.sin(angle) * 3
+            });
+            enemyShootSound.currentTime = 0;
+            enemyShootSound.play();
+        }
+    }
+    context.restore();
+}
+
+function drawBlackHoleEnemy(enemy) {
+    context.save();
+    context.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+    const grd = context.createRadialGradient(0, 0, enemy.width * 0.2, 0, 0, enemy.width / 2);
+    grd.addColorStop(0, 'black');
+    grd.addColorStop(1, 'gray');
+    context.fillStyle = grd;
+    context.beginPath();
+    context.arc(0, 0, enemy.width / 2, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+}
+
+function drawPhantomEnemy(enemy) {
+    if (!enemy.visible) return;
+    context.save();
+    context.fillStyle = 'cyan';
+    context.beginPath();
+    context.arc(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.width / 2, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+}
+
 function createStars(count) {
     for (let i = 0; i < count; i++) {
         stars.push({
@@ -1008,6 +1156,39 @@ function createExplosion(x, y, size, color) {
     explosions.push({ x, y, size, color, life: 10 });
 }
 
+function createGiantEyeFragments() {
+    giantEyeFragments = [];
+    const pieces = 8;
+    const cx = giantEye.x + giantEye.width / 2;
+    const cy = giantEye.y + giantEye.height / 2;
+    for (let i = 0; i < pieces; i++) {
+        const angle = (i / pieces) * Math.PI * 2;
+        giantEyeFragments.push({
+            x: cx,
+            y: cy,
+            vx: Math.cos(angle) * 2,
+            vy: Math.sin(angle) * 2,
+            size: 10,
+            life: 60
+        });
+    }
+}
+
+function updateGiantEyeFragments() {
+    giantEyeFragments.forEach((p, idx) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        context.fillStyle = 'white';
+        context.beginPath();
+        context.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        context.fill();
+        if (p.life <= 0) {
+            giantEyeFragments.splice(idx, 1);
+        }
+    });
+}
+
 function createScorePopup(x, y, text) {
     scorePopups.push({ x, y, text, alpha: 1 });
 }
@@ -1050,6 +1231,10 @@ function spawnGiantEye() {
     };
     bossFight = true;
     enemies = [];
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.src = giantEyeMusic;
+    backgroundMusic.play();
 }
 
 function updateGiantEye() {
@@ -1071,11 +1256,20 @@ function updateGiantEye() {
         giantEye.height *= 0.97;
         giantEye.y += 1;
         giantEye.shrinkStep += 0.05;
+        if (giantEyeFragments.length === 0 && giantEye.shrinkStep > 0.1) {
+            createGiantEyeFragments();
+        }
+        updateGiantEyeFragments();
         if (giantEye.shrinkStep >= 1) {
             giantEye = null;
             bossFight = false;
             giantEyeDefeated = true;
             level = 4;
+            gamePaused = false;
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+            backgroundMusic.src = currentWorld.music;
+            backgroundMusic.play();
             updateHeaderUI();
         }
     }
@@ -1136,8 +1330,9 @@ function giantEyeShoot() {
 
     const cx = giantEye.x + giantEye.width / 2;
     const cy = giantEye.y + giantEye.height / 2;
+    const offset = Math.random() * Math.PI * 2;
     for (let i = 0; i < bullets; i++) {
-        const angle = (i / bullets) * Math.PI * 2;
+        const angle = offset + (i / bullets) * Math.PI * 2;
         enemyBullets.push({
             x: cx,
             y: cy,
