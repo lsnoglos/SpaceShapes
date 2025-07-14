@@ -1662,6 +1662,8 @@ function handleRestartClick() {
     gameOverDialog.classList.add('hidden');
     document.getElementById('pause-button').classList.remove('hidden');
     resetGame();
+    const extraInfo = `Vidas: ${lives}  Puntos: ${score}`;
+    showWorldTransition(`${currentWorld.name} - ${currentWorld.id}`, extraInfo);
 }
 
 function showCongratulationsScreen() {
@@ -1818,6 +1820,9 @@ function startGame(clickType) {
     cancelAnimationFrame(startScreenAnimationId);
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
     setDifficulty(selectedDifficulty);
+
+    const extraInfo = `Vidas: ${lives}  Puntos: ${score}`;
+    showWorldTransition(`${currentWorld.name} - ${currentWorld.id}`, extraInfo);
 
     backgroundMusic.src = currentWorld.music;
 
