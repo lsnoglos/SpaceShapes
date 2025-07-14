@@ -1656,14 +1656,15 @@ function handleGameOver() {
 
 function handleRestartClick() {
     const gameOverDialog = document.getElementById('game-over');
-    document.getElementById('congratulations').classList.add('hidden');
-    document.getElementById('info-container').classList.remove('hidden');
-    document.getElementById('game').classList.remove('hidden');
     gameOverDialog.classList.add('hidden');
-    document.getElementById('pause-button').classList.remove('hidden');
-    resetGame();
-    const extraInfo = `Vidas: ${lives}  Puntos: ${score}`;
-    showWorldTransition(`${currentWorld.name} - ${currentWorld.id}`, extraInfo);
+    document.getElementById('pause-button').classList.add('hidden');
+    document.getElementById('info-container').classList.add('hidden');
+
+    stopGame();
+    resetGameState();
+
+    document.getElementById('start-screen').classList.remove('hidden');
+    animateStartScreen();
 }
 
 function showCongratulationsScreen() {
@@ -1818,8 +1819,7 @@ function initializeEventListeners() {
 
 function startGame(clickType) {
     cancelAnimationFrame(startScreenAnimationId);
-    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
-    setDifficulty(selectedDifficulty);
+    resetGameState();
 
     const extraInfo = `Vidas: ${lives}  Puntos: ${score}`;
     showWorldTransition(`${currentWorld.name} - ${currentWorld.id}`, extraInfo);
@@ -1883,9 +1883,7 @@ function resetPlayerPosition() {
     enemyBullets = [];
 }
 
-function resetGame() {
-    stopGame();
-
+function resetGameState() {
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
     setDifficulty(selectedDifficulty);
 
@@ -1932,6 +1930,12 @@ function resetGame() {
 
     backgroundMusic.currentTime = 0;
     backgroundMusic.src = currentWorld.music;
+}
+
+function resetGame() {
+    stopGame();
+    resetGameState();
+
     backgroundMusic.play();
 
     intervals.push(setInterval(incrementLives, lifeInterval));
