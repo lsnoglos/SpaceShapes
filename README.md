@@ -1,1 +1,13 @@
-![image](https://github.com/user-attachments/assets/bd7252a0-4e4d-4ced-90e0-2ec1dd88de6b)
+# Space Shapes
+
+Space Shapes es un sencillo juego de naves espaciales escrito con HTML5 Canvas y JavaScript puro.
+
+## ¿Cómo jugar?
+
+1. Abre `index.html` en tu navegador favorito.
+2. Usa las flechas del teclado para mover la nave y la barra espaciadora para disparar.
+3. En dispositivos táctiles puedes utilizar los controles que aparecen en pantalla.
+
+¡Disfruta derribando naves y acumulando puntos!
+
+Supera el nivel 3 para enfrentarte a un gigantesco ojo espacial que sigue tus movimientos.
