@@ -9,3 +9,5 @@ Space Shapes es un sencillo juego de naves espaciales escrito con HTML5 Canvas y
 3. En dispositivos táctiles puedes utilizar los controles que aparecen en pantalla.
 
 ¡Disfruta derribando naves y acumulando puntos!
+
+Supera el nivel 3 para enfrentarte a un gigantesco ojo espacial que sigue tus movimientos.
