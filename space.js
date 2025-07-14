@@ -53,7 +53,7 @@ const worlds = [
     },
     {
         id: 4,
-        name: 'Jupiter',
+        name: 'Andromeda',
         colorStart: '#1b2745',
         colorEnd: '#553311',
         enemies: [9],
@@ -62,7 +62,7 @@ const worlds = [
     },
     {
         id: 5,
-        name: 'Saturno',
+        name: 'Pegaso',
         colorStart: '#44331b',
         colorEnd: '#111733',
         enemies: [10],
@@ -71,7 +71,7 @@ const worlds = [
     },
     {
         id: 6,
-        name: 'Neptuno',
+        name: 'Centauro',
         colorStart: '#102840',
         colorEnd: '#102050',
         enemies: [11],
@@ -213,6 +213,7 @@ let giantEye = null;
 let bossFight = false;
 let giantEyeDefeated = false;
 let giantEyeFragments = [];
+let eyeExploding = false;
 
 let isPaused = false;
 
@@ -567,6 +568,7 @@ function updateBullets() {
                         giantEye.state = 'dying';
                         createGiantEyeFragments();
                         gamePaused = true;
+                        eyeExploding = true;
                     }
 
                     bullet.damage--;
@@ -1264,7 +1266,14 @@ function updateGiantEye() {
             giantEye = null;
             bossFight = false;
             giantEyeDefeated = true;
-            level = 4;
+            eyeExploding = false;
+
+            const idx = worlds.findIndex(w => w.id === currentWorld.id);
+            if (idx + 1 < worlds.length) {
+                currentWorld = worlds[idx + 1];
+                level = 1;
+            }
+
             gamePaused = false;
             backgroundMusic.pause();
             backgroundMusic.currentTime = 0;
@@ -1516,6 +1525,12 @@ function update() {
             generateObstacles();
             checkCollisions();
             updateLevel();
+        }
+        if (gamePaused && eyeExploding && giantEye) {
+            updateGiantEye();
+            if (Math.random() < 0.3) {
+                flashTime = 3;
+            }
         }
         draw();
 
@@ -1772,6 +1787,7 @@ function startGame(clickType) {
     giantEye = null;
     bossFight = false;
     giantEyeDefeated = false;
+    eyeExploding = false;
 
     intervals.push(setInterval(incrementLives, lifeInterval));
 
@@ -1839,6 +1855,7 @@ function resetGame() {
     giantEye = null;
     bossFight = false;
     giantEyeDefeated = false;
+    eyeExploding = false;
 
     spaceship.x = 50;
     spaceship.y = canvas.height / 2;
