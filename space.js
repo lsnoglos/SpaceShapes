@@ -152,6 +152,21 @@ let explosions = [];
 
 let scorePopups = [];
 
+let currentDifficulty = 'easy';
+
+const bigEnemies = [
+    {
+        id: 'giantEye',
+        hitsToExplode: { easy: 10, medium: 20, hard: 30 },
+        irritateAfter: { easy: 3, medium: 3, hard: 3 },
+        bulletsOnIrritate: { easy: 5, medium: 8, hard: 12 }
+    }
+];
+
+let giantEye = null;
+let bossFight = false;
+let giantEyeDefeated = false;
+
 let isPaused = false;
 
 function generador(cantidad, valorInicial, incremento) {
@@ -163,6 +178,7 @@ function generador(cantidad, valorInicial, incremento) {
 }
 
 function setDifficulty(difficulty) {
+    currentDifficulty = difficulty;
     let world = worlds.find(w => w.id === currentWorld.id);
     let difficultySetting = difficulties.find(d => d.difficulty === difficulty);
     if (difficultySetting) {
@@ -247,6 +263,7 @@ function draw() {
     drawSpaceship();
     drawBullets();
     drawEnemies();
+    drawGiantEye();
     drawEnemyBullets();
     drawSpecialWeapon();
     updateObstacles();
@@ -442,6 +459,33 @@ function updateBullets() {
                 }
             }
         });
+
+        if (giantEye && giantEye.state !== 'dying') {
+            if (bullet.x < giantEye.x + giantEye.width &&
+                bullet.x + bullet.width > giantEye.x &&
+                bullet.y < giantEye.y + giantEye.height &&
+                bullet.y + bullet.height > giantEye.y) {
+                const centerX = giantEye.x + giantEye.width / 2;
+                const centerY = giantEye.y + giantEye.height / 2;
+                const dist = Math.hypot(bullet.x - centerX, bullet.y - centerY);
+                if (dist <= giantEye.width * 0.2) {
+                    giantEye.hits++;
+                    giantEye.hitsSinceIrritate++;
+                    giantEye.state = 'active';
+                    if (giantEye.hitsSinceIrritate >= giantEye.irritateAfter) {
+                        giantEyeShoot();
+                        giantEye.hitsSinceIrritate = 0;
+                    }
+                    if (giantEye.hits >= giantEye.hitsToExplode) {
+                        giantEye.state = 'dying';
+                    }
+                    bullet.damage--;
+                }
+                if (bullet.damage <= 0) {
+                    spaceship.bullets.splice(bulletIndex, 1);
+                }
+            }
+        }
     });
 }
 
@@ -624,6 +668,8 @@ function drawSpecialWeapon() {
 
 function generateObstacles() {
     if (isGameOver || gamePaused || !isGameRunning) return;
+
+    if (bossFight) return;
 
     if (Math.random() < enemySpawnInterval / 100) {
         const enemyIndex = (level - 1) % currentWorld.enemies.length;
@@ -967,6 +1013,100 @@ function drawScorePopups() {
     });
 }
 
+function spawnGiantEye() {
+    const type = bigEnemies[0];
+    giantEye = {
+        x: canvas.width + 100,
+        y: canvas.height / 2 - 60,
+        width: 120,
+        height: 120,
+        speed: 1,
+        hits: 0,
+        hitsSinceIrritate: 0,
+        hitsToExplode: type.hitsToExplode[currentDifficulty],
+        irritateAfter: type.irritateAfter[currentDifficulty],
+        bulletsOnIrritate: type.bulletsOnIrritate[currentDifficulty],
+        state: 'entering',
+        shrinkStep: 0
+    };
+    bossFight = true;
+    enemies = [];
+}
+
+function updateGiantEye() {
+    if (!giantEye) return;
+
+    if (giantEye.state === 'entering') {
+        giantEye.x -= giantEye.speed;
+        if (giantEye.x <= canvas.width - giantEye.width - 40) {
+            giantEye.state = 'active';
+        }
+    } else if (giantEye.state === 'active') {
+        const centerY = giantEye.y + giantEye.height / 2;
+        giantEye.y += (spaceship.y - centerY) * 0.02;
+    } else if (giantEye.state === 'dying') {
+        giantEye.width *= 0.97;
+        giantEye.height *= 0.97;
+        giantEye.y += 1;
+        giantEye.shrinkStep += 0.05;
+        if (giantEye.shrinkStep >= 1) {
+            giantEye = null;
+            bossFight = false;
+            giantEyeDefeated = true;
+            level = 4;
+            updateHeaderUI();
+        }
+    }
+}
+
+function drawGiantEye() {
+    if (!giantEye) return;
+    context.save();
+    const centerX = giantEye.x + giantEye.width / 2;
+    const centerY = giantEye.y + giantEye.height / 2;
+    context.translate(centerX, centerY);
+    context.globalAlpha = 1 - giantEye.shrinkStep;
+    context.fillStyle = 'white';
+    context.beginPath();
+    context.arc(0, 0, giantEye.width / 2, 0, Math.PI * 2);
+    context.fill();
+    const irritation = giantEye.hitsSinceIrritate / giantEye.irritateAfter;
+    context.strokeStyle = `rgba(255,0,0,${irritation})`;
+    for (let i = 0; i < 6; i++) {
+        context.beginPath();
+        context.moveTo(0, 0);
+        const angle = Math.random() * Math.PI * 2;
+        context.lineTo(Math.cos(angle) * giantEye.width / 2, Math.sin(angle) * giantEye.height / 2);
+        context.stroke();
+    }
+    const offsetX = (spaceship.x - centerX) * 0.05;
+    const offsetY = (spaceship.y - centerY) * 0.05;
+    context.fillStyle = 'black';
+    context.beginPath();
+    context.arc(offsetX, offsetY, giantEye.width * 0.2, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+}
+
+function giantEyeShoot() {
+    if (!giantEye) return;
+    const bullets = giantEye.bulletsOnIrritate;
+    const cx = giantEye.x + giantEye.width / 2;
+    const cy = giantEye.y + giantEye.height / 2;
+    for (let i = 0; i < bullets; i++) {
+        const angle = (i / bullets) * Math.PI * 2;
+        enemyBullets.push({
+            x: cx,
+            y: cy,
+            width: 5,
+            height: 5,
+            color: 'red',
+            vx: Math.cos(angle) * 2,
+            vy: Math.sin(angle) * 2
+        });
+    }
+}
+
 function drawExplosions() {
     explosions.forEach((explosion, index) => {
         context.save();
@@ -1017,6 +1157,17 @@ function checkCollisions() {
             stopGame();
         }
     });
+
+    if (giantEye && giantEye.state !== 'dying') {
+        if (collisionBox.x < giantEye.x + giantEye.width &&
+            collisionBox.x + collisionBox.width > giantEye.x &&
+            collisionBox.y < giantEye.y + giantEye.height &&
+            collisionBox.y + collisionBox.height > giantEye.y) {
+            createExplosion((giantEye.x + spaceship.x) / 2, (giantEye.y + spaceship.y) / 2, 20, 'red');
+            isGameOver = true;
+            stopGame();
+        }
+    }
 
     if (specialStar &&
         collisionBox.x < specialStar.x + specialStar.radius &&
@@ -1082,6 +1233,13 @@ function updateLevel() {
 
     let newLevel = Math.floor((score - previousWorldMaxScore) / pointsPerLevel) + 1;
 
+    if (!giantEyeDefeated && newLevel > 3) {
+        newLevel = 3;
+        if (!bossFight) {
+            spawnGiantEye();
+        }
+    }
+
     if (newLevel > levelsPerWorld) {
         if (currentWorldIndex + 1 < worlds.length) {
             currentWorld = worlds[currentWorldIndex + 1];
@@ -1115,6 +1273,7 @@ function update() {
             updateSpaceship();
             updateBullets();
             updateEnemyBullets();
+            updateGiantEye();
             generateObstacles();
             checkCollisions();
             updateLevel();
@@ -1371,6 +1530,10 @@ function startGame(clickType) {
 
     startStatusButtons(clickType);
 
+    giantEye = null;
+    bossFight = false;
+    giantEyeDefeated = false;
+
     intervals.push(setInterval(incrementLives, lifeInterval));
 
     isGameRunning = true;
@@ -1433,6 +1596,10 @@ function resetGame() {
     score = 0;
     level = 1;
     currentWorld = worlds[0];
+
+    giantEye = null;
+    bossFight = false;
+    giantEyeDefeated = false;
 
     spaceship.x = 50;
     spaceship.y = canvas.height / 2;
