@@ -1092,7 +1092,7 @@ function drawGiantEye() {
     context.beginPath();
     context.arc(0, 0, giantEye.width / 2, 0, Math.PI * 2);
     context.fill();
-
+  
     const irritation = giantEye.hitsSinceIrritate / giantEye.irritateAfter;
     context.strokeStyle = `rgba(255,0,0,${irritation})`;
     for (let i = 0; i < 6; i++) {
@@ -1122,6 +1122,7 @@ function drawGiantEye() {
     context.save();
     context.scale(1, 1 - blinkProgress);
     context.fillStyle = pupilColor;
+
     context.beginPath();
     context.arc(offsetX, offsetY, giantEye.width * 0.2, 0, Math.PI * 2);
     context.fill();
@@ -1132,6 +1133,7 @@ function drawGiantEye() {
 function giantEyeShoot() {
     if (!giantEye) return;
     const bullets = giantEye.bulletAngles;
+
     const cx = giantEye.x + giantEye.width / 2;
     const cy = giantEye.y + giantEye.height / 2;
     for (let i = 0; i < bullets; i++) {
@@ -1276,6 +1278,7 @@ function updateLevel() {
 
     if (!giantEyeDefeated && currentWorld.id === bigEnemies[0].spawnAfterWorld && newLevel > levelsPerWorld) {
         newLevel = levelsPerWorld;
+
         if (!bossFight) {
             spawnGiantEye();
         }
