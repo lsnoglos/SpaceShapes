@@ -151,6 +151,7 @@ let gameOverHandled = false;
 let gamePaused = false;
 let isGameWon = false;
 let animationFrameId;
+let startScreenAnimationId;
 let isGameRunning = false;
 let intervals = [];
 
@@ -1809,6 +1810,7 @@ function initializeEventListeners() {
 }
 
 function startGame(clickType) {
+    cancelAnimationFrame(startScreenAnimationId);
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
     setDifficulty(selectedDifficulty);
 
@@ -1861,7 +1863,7 @@ function animateStartScreen() {
     drawStars();
     drawPlanets();
     drawSpaceship();
-    requestAnimationFrame(animateStartScreen);
+    startScreenAnimationId = requestAnimationFrame(animateStartScreen);
 }
 
 function resetPlayerPosition() {
