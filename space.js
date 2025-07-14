@@ -157,9 +157,12 @@ let currentDifficulty = 'easy';
 const bigEnemies = [
     {
         id: 'giantEye',
-        hitsToExplode: { easy: 10, medium: 20, hard: 30 },
-        irritateAfter: { easy: 3, medium: 3, hard: 3 },
-        bulletsOnIrritate: { easy: 5, medium: 8, hard: 12 }
+        spawnAfterWorld: 3,
+        hitsToExplode: { easy: 50, medium: 80, hard: 200 },
+        irritateAfter: { easy: 10, medium: 5, hard: 3 },
+        bulletAngles: { easy: 5, medium: 8, hard: 12 },
+        damagePerHit: { easy: 0.5, medium: 0.5, hard: 0.5 },
+        closeAfterHits: { easy: 5, medium: 4, hard: 3 }
     }
 ];
 
@@ -469,16 +472,28 @@ function updateBullets() {
                 const centerY = giantEye.y + giantEye.height / 2;
                 const dist = Math.hypot(bullet.x - centerX, bullet.y - centerY);
                 if (dist <= giantEye.width * 0.2) {
-                    giantEye.hits++;
+                    giantEye.health -= giantEye.damagePerHit;
                     giantEye.hitsSinceIrritate++;
+                    giantEye.hitsSinceClose++;
                     giantEye.state = 'active';
+
                     if (giantEye.hitsSinceIrritate >= giantEye.irritateAfter) {
                         giantEyeShoot();
                         giantEye.hitsSinceIrritate = 0;
                     }
-                    if (giantEye.hits >= giantEye.hitsToExplode) {
+                    if (giantEye.hitsSinceClose >= giantEye.closeAfterHits) {
+                        giantEye.blinkDuration = 60;
+                        giantEye.blinkTimer = giantEye.blinkDuration;
+                        giantEye.hitsSinceClose = 0;
+                    } else {
+                        giantEye.blinkDuration = 15;
+                        giantEye.blinkTimer = giantEye.blinkDuration;
+                    }
+
+                    if (giantEye.health <= 0) {
                         giantEye.state = 'dying';
                     }
+
                     bullet.damage--;
                 }
                 if (bullet.damage <= 0) {
@@ -1021,13 +1036,17 @@ function spawnGiantEye() {
         width: 120,
         height: 120,
         speed: 1,
-        hits: 0,
+        health: type.hitsToExplode[currentDifficulty],
         hitsSinceIrritate: 0,
-        hitsToExplode: type.hitsToExplode[currentDifficulty],
+        hitsSinceClose: 0,
         irritateAfter: type.irritateAfter[currentDifficulty],
-        bulletsOnIrritate: type.bulletsOnIrritate[currentDifficulty],
+        bulletAngles: type.bulletAngles[currentDifficulty],
+        damagePerHit: type.damagePerHit[currentDifficulty],
+        closeAfterHits: type.closeAfterHits[currentDifficulty],
         state: 'entering',
-        shrinkStep: 0
+        shrinkStep: 0,
+        blinkTimer: 0,
+        blinkDuration: 0
     };
     bossFight = true;
     enemies = [];
@@ -1044,6 +1063,9 @@ function updateGiantEye() {
     } else if (giantEye.state === 'active') {
         const centerY = giantEye.y + giantEye.height / 2;
         giantEye.y += (spaceship.y - centerY) * 0.02;
+        if (giantEye.blinkTimer > 0) {
+            giantEye.blinkTimer--;
+        }
     } else if (giantEye.state === 'dying') {
         giantEye.width *= 0.97;
         giantEye.height *= 0.97;
@@ -1070,6 +1092,7 @@ function drawGiantEye() {
     context.beginPath();
     context.arc(0, 0, giantEye.width / 2, 0, Math.PI * 2);
     context.fill();
+  
     const irritation = giantEye.hitsSinceIrritate / giantEye.irritateAfter;
     context.strokeStyle = `rgba(255,0,0,${irritation})`;
     for (let i = 0; i < 6; i++) {
@@ -1079,18 +1102,38 @@ function drawGiantEye() {
         context.lineTo(Math.cos(angle) * giantEye.width / 2, Math.sin(angle) * giantEye.height / 2);
         context.stroke();
     }
+
+    const blinkProgress = giantEye.blinkTimer > 0 ? 1 - Math.abs((giantEye.blinkTimer / giantEye.blinkDuration) * 2 - 1) : 0;
+    const irisScale = 1 - blinkProgress;
     const offsetX = (spaceship.x - centerX) * 0.05;
     const offsetY = (spaceship.y - centerY) * 0.05;
-    context.fillStyle = 'black';
+
+    const irisColor = irritation > 0.5 ? 'red' : '#3b2210';
+    const pupilColor = irritation > 0.5 ? 'white' : 'black';
+
+    context.save();
+    context.scale(1, irisScale);
+    context.fillStyle = irisColor;
+    context.beginPath();
+    context.arc(offsetX, offsetY, giantEye.width * 0.35, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+
+    context.save();
+    context.scale(1, 1 - blinkProgress);
+    context.fillStyle = pupilColor;
+
     context.beginPath();
     context.arc(offsetX, offsetY, giantEye.width * 0.2, 0, Math.PI * 2);
     context.fill();
+    context.restore();
     context.restore();
 }
 
 function giantEyeShoot() {
     if (!giantEye) return;
-    const bullets = giantEye.bulletsOnIrritate;
+    const bullets = giantEye.bulletAngles;
+
     const cx = giantEye.x + giantEye.width / 2;
     const cy = giantEye.y + giantEye.height / 2;
     for (let i = 0; i < bullets; i++) {
@@ -1233,8 +1276,9 @@ function updateLevel() {
 
     let newLevel = Math.floor((score - previousWorldMaxScore) / pointsPerLevel) + 1;
 
-    if (!giantEyeDefeated && newLevel > 3) {
-        newLevel = 3;
+    if (!giantEyeDefeated && currentWorld.id === bigEnemies[0].spawnAfterWorld && newLevel > levelsPerWorld) {
+        newLevel = levelsPerWorld;
+
         if (!bossFight) {
             spawnGiantEye();
         }
