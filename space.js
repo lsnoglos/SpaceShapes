@@ -1292,7 +1292,8 @@ function updateGiantEye() {
             const idx = worlds.findIndex(w => w.id === currentWorld.id);
             if (idx + 1 < worlds.length) {
                 const nextWorld = worlds[idx + 1];
-                showWorldTransition(`${nextWorld.name} - ${nextWorld.id}`, `Enemigos destruidos: ${enemiesDestroyed}`);
+                const extraInfo = `Vidas: ${lives}  Puntos: ${score}`;
+                showWorldTransition(`${nextWorld.name} - ${nextWorld.id}`, extraInfo);
                 enemiesDestroyed = 0;
                 currentWorld = nextWorld;
                 level = 1;
@@ -1522,7 +1523,8 @@ function updateLevel() {
     if (newLevel > levelsPerWorld) {
         if (currentWorldIndex + 1 < worlds.length) {
             const nextWorld = worlds[currentWorldIndex + 1];
-            showWorldTransition(`${nextWorld.name} - ${nextWorld.id}`, `Enemigos destruidos: ${enemiesDestroyed}`);
+            const extraInfo = `Vidas: ${lives}  Puntos: ${score}`;
+            showWorldTransition(`${nextWorld.name} - ${nextWorld.id}`, extraInfo);
             enemiesDestroyed = 0;
             currentWorld = nextWorld;
             newLevel = 1;
@@ -1688,9 +1690,12 @@ function showWorldTransition(text, extra = '') {
     const extraTxt = document.getElementById('world-transition-extra');
     txt.innerText = text;
     extraTxt.innerText = extra;
+
+    gamePaused = true;
     overlay.classList.remove('hidden');
     setTimeout(() => {
         overlay.classList.add('hidden');
+        gamePaused = false;
     }, worldTransitionDuration);
 }
 
@@ -1935,10 +1940,13 @@ function nextWorld() {
     if (currentWorldIndex + 1 < worlds.length) {
         currentWorld = worlds[currentWorldIndex + 1];
         level = 1;
-        
+
         const newLevelSound = new Audio('assets/sounds/newLevel.mp3');
         newLevelSound.currentTime = 0;
         newLevelSound.play();
+
+        const extraInfo = `Vidas: ${lives}  Puntos: ${score}`;
+        showWorldTransition(`${currentWorld.name} - ${currentWorld.id}`, extraInfo);
     } else {
         showCongratulationsScreen();
         return;
