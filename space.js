@@ -185,7 +185,6 @@ let flashTime = 0;
 
 let score = 0;
 let level = 1;
-const pointsPerLevel = 11;
 
 let specialHeart = null;
 const specialHeartInterval = 2 * 60 * 1000;
@@ -194,6 +193,11 @@ let lastSpecialHeartSpawnTime = 0;
 let explosions = [];
 
 let scorePopups = [];
+
+const enemiesToAdvance = { easy: 8, medium: 12, hard: 16 };
+let enemiesDestroyed = 0;
+
+let worldTransitionDuration = 3000;
 
 let currentDifficulty = 'easy';
 
@@ -205,7 +209,8 @@ const bigEnemies = [
         irritateAfter: { easy: 10, medium: 5, hard: 3 },
         bulletAngles: { easy: 10, medium: 15, hard: 20 },
         damagePerHit: { easy: 1.5, medium: 1, hard: 0.5 },
-        closeAfterHits: { easy: 12, medium: 9, hard: 6 }
+        closeAfterHits: { easy: 12, medium: 9, hard: 6 },
+        score: 100
     }
 ];
 
@@ -521,6 +526,7 @@ function updateBullets() {
                             score += points;
                             updateScoreUI();
                             createScorePopup(enemy.x, enemy.y, `+${points}`);
+                            enemiesDestroyed++;
                             enemyExplodeSound.currentTime = 0;
                             enemyExplodeSound.volume = 0.060;
                             enemyExplodeSound.play();
@@ -582,9 +588,15 @@ function updateBullets() {
 }
 
 function drawEnemyBullets() {
-    enemyBullets.forEach((bullet, index) => {
+    enemyBullets.forEach((bullet) => {
+        context.save();
         context.fillStyle = bullet.color;
+        if (bullet.glow) {
+            context.shadowColor = bullet.color;
+            context.shadowBlur = 15;
+        }
         context.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        context.restore();
     });
 }
 
@@ -999,9 +1011,10 @@ function drawOctopusEnemy(enemy) {
                 y: enemy.y + enemy.height / 2,
                 width: 6,
                 height: 6,
-                color: 'purple',
+                color: '#ff66ff',
                 vx: Math.cos(angle) * 3,
-                vy: Math.sin(angle) * 3
+                vy: Math.sin(angle) * 3,
+                glow: true
             });
             enemyShootSound.currentTime = 0;
             enemyShootSound.play();
@@ -1213,6 +1226,7 @@ function drawScorePopups() {
 
 function spawnGiantEye() {
     const type = bigEnemies[0];
+    showWorldTransition('Alerta - Ojo Gigante');
     giantEye = {
         x: canvas.width + 100,
         y: canvas.height / 2 - 60,
@@ -1220,6 +1234,7 @@ function spawnGiantEye() {
         height: 120,
         speed: 1,
         health: type.hitsToExplode[currentDifficulty],
+        maxHealth: type.hitsToExplode[currentDifficulty],
         hitsSinceIrritate: 0,
         hitsSinceClose: 0,
         irritateAfter: type.irritateAfter[currentDifficulty],
@@ -1263,6 +1278,11 @@ function updateGiantEye() {
         }
         updateGiantEyeFragments();
         if (giantEye.shrinkStep >= 1) {
+            score += bigEnemies[0].score;
+            updateScoreUI();
+            createScorePopup(spaceship.x, spaceship.y, `+${bigEnemies[0].score}`);
+            enemiesDestroyed++;
+
             giantEye = null;
             bossFight = false;
             giantEyeDefeated = true;
@@ -1270,7 +1290,10 @@ function updateGiantEye() {
 
             const idx = worlds.findIndex(w => w.id === currentWorld.id);
             if (idx + 1 < worlds.length) {
-                currentWorld = worlds[idx + 1];
+                const nextWorld = worlds[idx + 1];
+                showWorldTransition(`${nextWorld.name} - ${nextWorld.id}`, `Enemigos destruidos: ${enemiesDestroyed}`);
+                enemiesDestroyed = 0;
+                currentWorld = nextWorld;
                 level = 1;
             }
 
@@ -1330,6 +1353,13 @@ function drawGiantEye() {
     context.arc(offsetX, offsetY, giantEye.width * 0.2, 0, Math.PI * 2);
     context.fill();
     context.restore();
+
+    const barWidth = giantEye.width;
+    const healthRatio = giantEye.health / giantEye.maxHealth;
+    context.fillStyle = 'red';
+    context.fillRect(-barWidth / 2, giantEye.height / 2 + 10, barWidth, 5);
+    context.fillStyle = 'green';
+    context.fillRect(-barWidth / 2, giantEye.height / 2 + 10, barWidth * healthRatio, 5);
     context.restore();
 }
 
@@ -1473,12 +1503,12 @@ function updateLevel() {
     const currentWorldIndex = worlds.findIndex(world => world.id === currentWorld.id);
     const levelsPerWorld = currentWorld.enemies.length;
 
-    let previousWorldMaxScore = 0;
+    let previousWorldEnemies = 0;
     for (let i = 0; i < currentWorldIndex; i++) {
-        previousWorldMaxScore += pointsPerLevel * worlds[i].enemies.length;
+        previousWorldEnemies += enemiesToAdvance[currentDifficulty] * worlds[i].enemies.length;
     }
 
-    let newLevel = Math.floor((score - previousWorldMaxScore) / pointsPerLevel) + 1;
+    let newLevel = Math.floor((enemiesDestroyed - previousWorldEnemies) / enemiesToAdvance[currentDifficulty]) + 1;
 
     if (!giantEyeDefeated && currentWorld.id === bigEnemies[0].spawnAfterWorld && newLevel > levelsPerWorld) {
         newLevel = levelsPerWorld;
@@ -1490,7 +1520,10 @@ function updateLevel() {
 
     if (newLevel > levelsPerWorld) {
         if (currentWorldIndex + 1 < worlds.length) {
-            currentWorld = worlds[currentWorldIndex + 1];
+            const nextWorld = worlds[currentWorldIndex + 1];
+            showWorldTransition(`${nextWorld.name} - ${nextWorld.id}`, `Enemigos destruidos: ${enemiesDestroyed}`);
+            enemiesDestroyed = 0;
+            currentWorld = nextWorld;
             newLevel = 1;
 
             backgroundMusic.pause();
@@ -1646,6 +1679,18 @@ function showCongratulationsScreen() {
     document.getElementById('restart-game').addEventListener('click', handleRestartClick);
 
     animateStartScreen();
+}
+
+function showWorldTransition(text, extra = '') {
+    const overlay = document.getElementById('world-transition');
+    const txt = document.getElementById('world-transition-text');
+    const extraTxt = document.getElementById('world-transition-extra');
+    txt.innerText = text;
+    extraTxt.innerText = extra;
+    overlay.classList.remove('hidden');
+    setTimeout(() => {
+        overlay.classList.add('hidden');
+    }, worldTransitionDuration);
 }
 
 function stopGame() {
