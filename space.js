@@ -158,11 +158,11 @@ const bigEnemies = [
     {
         id: 'giantEye',
         spawnAfterWorld: 3,
-        hitsToExplode: { easy: 50, medium: 80, hard: 200 },
+        hitsToExplode: { easy: 50, medium: 100, hard: 200 },
         irritateAfter: { easy: 10, medium: 5, hard: 3 },
-        bulletAngles: { easy: 5, medium: 8, hard: 12 },
-        damagePerHit: { easy: 0.5, medium: 0.5, hard: 0.5 },
-        closeAfterHits: { easy: 5, medium: 4, hard: 3 }
+        bulletAngles: { easy: 10, medium: 15, hard: 20 },
+        damagePerHit: { easy: 1.5, medium: 1, hard: 0.5 },
+        closeAfterHits: { easy: 12, medium: 9, hard: 6 }
     }
 ];
 
